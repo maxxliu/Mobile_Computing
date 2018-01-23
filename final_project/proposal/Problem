@@ -1,0 +1,3 @@
+Problem
+
+In order to increase autonomous vehicle safety and optimize route planning, vehicles must be able to effectively communicate with another. Specifically, we need to figure out the optimal number, and which, vehicles to communicate with while taking into account the time and cost of communication.
