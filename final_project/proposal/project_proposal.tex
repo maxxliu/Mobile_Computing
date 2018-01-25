@@ -7,6 +7,8 @@
 \usepackage{url}
 \usepackage{amsmath,amssymb}
 \usepackage{natbib}
+\usepackage{wrapfig}
+\usepackage{graphicx}
 \bibliographystyle{abbrvnat}
 
 \title{Project Proposal\vspace{-6pt}\\{\large Andrea F. Daniele $\hspace{2cm}$ Max X. Liu $\hspace{2cm}$ Noah A. Hirsch }}
@@ -44,13 +46,27 @@ fleet-level communication architecture on the on-board computer.
 
 \section*{Proposed Approach and Timeline}
 \vspace{-.3cm}
+We will run our experiments on a fleet of real robots driving autonomously in a small town 
+known as Duckietown~(Figure \ref{fig:duckietown}).
 
+\begin{wrapfigure}{r}{0.5\textwidth}
+    \centering
+    \vspace{-12pt}
+    \includegraphics[width=0.48\textwidth]{figures/duckietown.jpg}
+    \caption{Duckietown at TTIC \label{fig:duckietown}}
+    \vspace{-6pt}
+\end{wrapfigure}
 
-
-
-%\bibliographystyle{abbrvnat}
-%{\scriptsize%
-%\bibliography{references}
-%}
+In the first $2$ weeks, we will deploy a communication infrastructure on a fleet of about 8 robots.
+These robots will be connected to a common WiFi network.
+Due to the size of the town, all the robots would be able to physically communicate with each other.
+We will simulate smaller communications ranges around each robot by artificially dropping packets after a 
+certain distance.
+In the last $4$ weeks we will run experiments in which, at a certain time instant, one of the robots will perceive
+the presence of an hazardous situation and communicate it to the closest $N$ robots via an emergency message
+with the location of the event. Once a robot receives an emergency message, it will immediately stop if the 
+event being notified is located along its current path to its goal. In these experiments,
+we will measure the performance of the communication protocol as the reaction time of the robots stopping 
+upon receiving an emergency message.
 
 \end{document}
