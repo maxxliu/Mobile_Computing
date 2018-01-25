@@ -2,7 +2,7 @@
 # @Date:   Monday, January 22nd 2018
 # @Email:  afdaniele@ttic.edu
 # @Last modified by:   afdaniele
-# @Last modified time: Wednesday, January 24th 2018
+# @Last modified time: Thursday, January 25th 2018
 
 import os
 from os.path import isfile, join
@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import json
 import math
+
+import scipy.fftpack
 
 
 def compute_features( sample_data, features ):
@@ -63,7 +65,77 @@ def extract_samples( trace_data, readings_per_sample, features ):
     return output
 
 
-def load_data( data_dir, data_type, readings_per_sample, features, activities=None, verbose=False ):
+'''
+Apply FFT to remove high frequency components of the IMU data
+
+@param sample_data: a list of numpy arrays. Each array is a sample of shape (T, 1, F),
+    where T is the time horizon, and F is the number of features.
+
+@param features: a list of strings. Each string identifies a feature (e.g., xAccl, time).
+    The feature 'time' must be one of the features.
+
+@return a numpy array of shape (T, 1, F) in which the high frequency components of
+    the signal are removed.
+'''
+def remove_noise( sample_data, features ):
+    T, _, F = sample_data.shape
+    time_index = features.index('time')
+    t_0 = sample_data[0, 0, time_index]
+    t_1 = sample_data[1, 0, time_index]
+    resolution = t_1 - t_0
+
+    for f in range(F):
+        if( features[f] == 'time' ): continue
+        y = sample_data[:, 0, f]
+        # compute FT of the feature f
+        w = scipy.fftpack.rfft(y)
+        # compute mean frequency
+        mean = np.mean( np.abs(w) )
+        # set the threshold to double the mean
+        thr = 2 * mean
+        # remove high frequency components
+        cutoff_idx = np.abs(w) < thr
+        w[cutoff_idx] = 0
+        # return to time domain by doing inverseFFT
+        y = scipy.fftpack.irfft(w)
+        sample_data[:, 0, f] = y
+    # return filtered sample
+    return sample_data
+
+
+def normalize_dataset( datasets ):
+    return datasets
+
+
+'''
+Each txt file has the form (note that it is not a valid JSON file due to the single quotes)
+
+    [                                   # this is a list of all the traces from all the teams
+        {                               # this is one trace from one team
+            'type': 'Jumping',
+            'seq': [
+                {
+                    'data':{
+                        'xGyro': #,
+                        'zAccl': #,
+                        'yGyro': #,
+                        'zGyro': #,
+                        'xAccl': #,
+                        'xMag': #,
+                        'yMag': #,
+                        'zMag': #,
+                        'yAccl': #
+                    },
+                    'time': #           # this is the absolute time in seconds
+                },
+                ...
+            ]
+        },
+        ...
+    ]
+
+'''
+def load_data( data_dir, data_type, seconds_per_sample, features, use_noise_reduction=True, use_data_normalization=True, activities=None, verbose=False ):
     if( activities == None ):
         activities = "Standing|Walking|Jumping|Driving"
     else:
@@ -80,7 +152,14 @@ def load_data( data_dir, data_type, readings_per_sample, features, activities=No
     ]
     num_txt_files = len(txt_files)
     # get raw data from disk
-    print 'Loading data: ',
+    if verbose:
+        status = {True : 'ENABLED', False : 'DISABLED'}
+        print 'Loading data:'
+        print '\tINFO: FFT-based noise reduction %s' % status[use_noise_reduction]
+        print '\tINFO: Data normalization %s' % status[use_data_normalization]
+        print '\tProgress: ',
+    else:
+        print 'Loading data: ',
     pbar = ProgressBar( num_txt_files )
     # get content of the JSON files
     raw_data = {}
@@ -98,6 +177,23 @@ def load_data( data_dir, data_type, readings_per_sample, features, activities=No
         activities = activities | set([ d['type'] for d in activity_data ])
         # update progress bar
         pbar.next()
+    # if we assume that the IMU publish rate is perfect, then there is a fixed
+    # relation between seconds_per_sample and readings_per_sample, let's find it
+    txt_file_0 = txt_files[0]
+    activity_0 = raw_data[ txt_file_0 ]
+    trace_0 = activity_0[0]['seq']
+    datapoints_count = 0
+    start_time = trace_0[0]['time']
+    for datapoint in trace_0:
+        datapoints_count += 1
+        if datapoint['time'] - start_time >= seconds_per_sample: break
+    readings_per_sample = datapoints_count
+    if verbose:
+        print 'INFO: %d seconds/sample corresponds to %d readings/sample @ %.1f Hz' % (
+            seconds_per_sample,
+            readings_per_sample,
+            float(readings_per_sample)/float(seconds_per_sample)
+        )
     # do post-processing on the raw data
     num_traces = sum([ len(a) for a in raw_data.values() ])
     print 'Processing data: ',
@@ -112,13 +208,25 @@ def load_data( data_dir, data_type, readings_per_sample, features, activities=No
             trace_seq = trace['seq']
             # fragment the trace data into a sequence of smaller samples
             samples = extract_samples( trace_seq, readings_per_sample, features )
-            # append samples to the dataset
-            datasets[trace_type].extend( samples )
+            # reduce noise (if enabled)
+            if use_noise_reduction:
+                # we expect the activity lo leave a unique fingerprint in the IMU readings
+                # but we know that IMUs are noisy. Let's remove that noise
+                for sample in samples:
+                    sample = remove_noise( sample, features )
+                    # append sample to the dataset
+                    datasets[trace_type].append( sample )
+            else:
+                # append samples to the dataset
+                datasets[trace_type].extend( samples )
             # update progress bar
             pbar.next()
+    # normalize data (if enabled)
+    if use_data_normalization:
+        datasets = normalize_dataset( datasets )
     if verbose:
         # print statistics about the datasets loaded
-        print 'Datasets:'
+        print 'INFO: Datasets:'
         for activity_type, dataset in datasets.items():
             print '\t%s: %d samples' % ( activity_type, len(dataset) )
     # return datasets
