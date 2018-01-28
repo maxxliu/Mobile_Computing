@@ -2,11 +2,10 @@
 # @Date:   Tuesday, January 23rd 2018
 # @Email:  afdaniele@ttic.edu
 # @Last modified by:   afdaniele
-# @Last modified time: Tuesday, January 23rd 2018
+# @Last modified time: Sunday, January 28th 2018
 
 import tensorflow as tf
-
-
+from utils import ProgressBar
 
 def get_model( timesteps, num_features, rnn_state_size, num_classes, batch_size, forward_only=True, learning_rate=0.001 ):
     # define placeholders for the input X
@@ -38,12 +37,16 @@ def get_model( timesteps, num_features, rnn_state_size, num_classes, batch_size,
     # the LSTM object takes the initial state as a tuple (hidden, input)
     lstm_state = ( hidden_state, current_state )
     # create neural network
+    pbar = ProgressBar( maxVal=timesteps )
+    print 'Creating RNNs... ',
     for t in range(timesteps):
-        print 'Creating cell at timestep t=%d' % t
         # Update the state of the LSTM chain after processing the input at time t
         lstm_output, lstm_state = lstm_cell( X[t], lstm_state )
         # append the logit signal coming out of the LSTM to the output vector
         output_logits.append( lstm_output )
+        # update progress bar
+        pbar.next()
+
     # stack the logits signal into a tensor of shape [timesteps, batch_size, rnn_state_size]
     logits_sequence = tf.stack( output_logits, axis=0 )
 
@@ -60,11 +63,14 @@ def get_model( timesteps, num_features, rnn_state_size, num_classes, batch_size,
         return X, Y
     # => this section creates the backpropagation (needed only for training)
     # define placeholders for the supervision (labels)
-    Y = tf.placeholder( tf.float32, [None, num_classes] )
+    Y = tf.placeholder( tf.int32, [batch_size,] )
+
+    labels = tf.one_hot(Y, num_classes)
+
     # compute the log-loss (aka cross-entropy loss)
-    loss = tf.nn.softmax_cross_entropy_with_logits( logits=logits, labels=Y )
+    loss = tf.nn.softmax_cross_entropy_with_logits( logits=logits, labels=labels )
     batch_loss = tf.reduce_sum( loss )
     # create trainer operation
     train_op = tf.train.AdamOptimizer(learning_rate).minimize( batch_loss )
     # return pointers
-    return X, Y, train_op
+    return X, Y, batch_loss, train_op

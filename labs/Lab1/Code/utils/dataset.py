@@ -2,7 +2,7 @@
 # @Date:   Monday, January 22nd 2018
 # @Email:  afdaniele@ttic.edu
 # @Last modified by:   afdaniele
-# @Last modified time: Friday, January 26th 2018
+# @Last modified time: Sunday, January 28th 2018
 
 import os
 from os.path import isfile, join
@@ -79,14 +79,14 @@ Each txt file has the form (note that it is not a valid JSON file due to the sin
                 {
                     'data':{
                         'xGyro': #,
-                        'zAccl': #,
                         'yGyro': #,
                         'zGyro': #,
                         'xAccl': #,
+                        'yAccl': #,
+                        'zAccl': #,
                         'xMag': #,
                         'yMag': #,
-                        'zMag': #,
-                        'yAccl': #
+                        'zMag': #
                     },
                     'time': #           # this is the absolute time in seconds
                 },
@@ -97,7 +97,7 @@ Each txt file has the form (note that it is not a valid JSON file due to the sin
     ]
 
 '''
-def load_data( data_dir, data_type, seconds_per_sample, features, verbose=False ):
+def load_data( data_dir, data_type, seconds_per_sample, features, use_data_shuffling, verbose=False ):
     # generate classes map
     idx_to_class = { -1 : 'Unknown', 0 : 'Standing', 1 : 'Walking', 2 : 'Jumping', 3 : 'Driving' }
     class_to_idx = { 'Unknown' : -1, 'Standing' : 0, 'Walking' : 1, 'Jumping' : 2, 'Driving' : 3 }
@@ -153,12 +153,13 @@ def load_data( data_dir, data_type, seconds_per_sample, features, verbose=False 
             pbar.next()
     # make sure input and output are the same size
     assert( len(dataset['input']) == len(dataset['output']) )
-    # shuffle data
-    indices = range( len(dataset['input']) )
-    random.shuffle( indices )
-    random.shuffle( indices )
-    dataset['input'] = [ dataset['input'][i] for i in indices ]
-    dataset['output'] = [ dataset['output'][i] for i in indices ]
+    # shuffle data (if needed)
+    if use_data_shuffling:
+        indices = range( len(dataset['input']) )
+        random.shuffle( indices )
+        random.shuffle( indices )
+        dataset['input'] = [ dataset['input'][i] for i in indices ]
+        dataset['output'] = [ dataset['output'][i] for i in indices ]
     # print some statistics (if needed)
     if verbose:
         # print statistics about the dataset loaded
@@ -315,7 +316,7 @@ def batchify( dataset, batch_size ):
         i, f = bucket
         # create batch
         batch_input = np.concatenate( dataset['input'][i:f], axis=1 )
-        batch_output = np.asarray( dataset['output'][i:f] )
+        batch_output = np.asarray( dataset['output'][i:f], np.int32 )
         # append batch
         batched_dataset['input'].append( batch_input )
         batched_dataset['output'].append( batch_output )

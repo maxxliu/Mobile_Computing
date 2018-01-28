@@ -7,17 +7,19 @@
 
 from utils import *
 import numpy as np
-# from machine_learning import *
+from machine_learning import *
 
 # define constants
 features = [ 'xAccl', 'yAccl', 'zAccl', 'time' ]
 data_dir = "../Data"            # directory containing the dataset
-seconds_per_sample = 2          # number of seconds of IMU readings in one sample
+seconds_per_sample = 1          # number of seconds of IMU readings in one sample
 batch_size = 6                  # number of traces used in parallel to train the model
 rnn_state_size = 50             # size of the memory of the RNN cells
 num_classes = 4                 # classes to chose from (i.e., Standing, Walking, Jumping, Driving)
-use_noise_reduction = False     # whether to use FFT(Fast Fourier Transform) to remove noise
+use_data_shuffling = False      # TODO
+use_noise_reduction = True      # whether to use FFT(Fast Fourier Transform) to remove noise
 use_data_normalization = True   # whether to normalize the features values to the range [0,1]
+learning_rate = 0.001           #
 verbose = True                  # enables the verbose mode
 
 
@@ -43,6 +45,7 @@ idx_to_class, class_to_idx, train_data = load_data(
     'train',
     seconds_per_sample,
     features,
+    use_data_shuffling,
     verbose
 )
 if use_noise_reduction:     # remove noise by applying FFT (if needed)
@@ -58,6 +61,7 @@ _, _, test_data = load_data(
     'test',
     seconds_per_sample,
     features,
+    use_data_shuffling,
     verbose
 )
 if use_noise_reduction:     # remove noise by applying FFT (if needed)
@@ -75,19 +79,63 @@ if verbose:
 
 
 # create the model
+timesteps, _, _ = train_data['input'][0].shape
+X, Y, loss, train_op = get_model(
+    timesteps,
+    num_features,
+    rnn_state_size,
+    num_classes,
+    batch_size,
+    forward_only=False,
+    learning_rate=learning_rate
+)
 
 
+
+# initialize model
+session = tf.Session()
+session.run(
+    tf.global_variables_initializer()
+)
 
 
 # train the model
 i = 0
+
 for cross_train, cross_eval in cross_validation(train_batches, 3):
     train_input, train_output = cross_train
     eval_input, eval_output = cross_eval
 
     print 'Iteration %d' % i
-    print '%d training batches' % len( train_input )
-    print '%d validation batches' % len( eval_input )
+
+
+    # train
+    n_train_batches = len(train_input)
+    for j in range(n_train_batches):
+        batch_input = train_input[j]
+        batch_output = train_output[j]
+        #
+
+        # print batch_input.shape
+        # print batch_output.shape
+
+
+
+        # train the network on the current batch
+        loss_val, _ = session.run(
+            [loss, train_op],
+            { X : batch_input, Y : batch_output }
+        )
+
+        print 'Loss: %.2f' % loss_val
+
+        # print '%d training batches' % len( train_input )
+        # print '%d validation batches' % len( eval_input )
+        # print
+
+
+
+
     print
 
     i += 1
