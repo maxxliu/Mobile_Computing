@@ -21,7 +21,6 @@ class ProgressBar():
         for i in range(10,101,10): self.barParts.extend( ['.'] * self.precision + ['%d%%' % i] )
         self.barParts[-1] += ']'
         if doneMessage: self.barParts[-1] += ' Done!'
-        # self.barParts[-1] += '\n'
         self.barLength = len(self.barParts)
         self.step = float(self.barLength-1) / self.maxVal
 

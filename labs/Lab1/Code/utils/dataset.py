@@ -2,7 +2,7 @@
 # @Date:   Monday, January 22nd 2018
 # @Email:  afdaniele@ttic.edu
 # @Last modified by:   afdaniele
-# @Last modified time: Thursday, January 25th 2018
+# @Last modified time: Friday, January 26th 2018
 
 import os
 from os.path import isfile, join
@@ -13,11 +13,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import json
 import math
-
 import scipy.fftpack
+import random
+
+# if we assume that the IMU publish rate is perfect, then there is a fixed
+# relation between seconds_per_sample and readings_per_sample
+IMU_FREQUENCY = 128             # average frequency computed on the dataset
 
 
-def compute_features( sample_data, features ):
+def _compute_features( sample_data, features ):
     raw_features = sample_data[0]['data'].keys()
     adj_features = set(features) - set(raw_features)
     # return if there is no adjoint feature
@@ -31,12 +35,12 @@ def compute_features( sample_data, features ):
     #
     #TODO
 
-def extract_features_from_sample( sample_data, features ):
+def _extract_features_from_sample( sample_data, features ):
     T = len(sample_data)    # T = timesteps
     F = len(features)       # F = number of features
     # extract features from sample
     sample_features = np.zeros( dtype=np.float32, shape=(T, 1, F) )
-    compute_features( sample_data, features )
+    _compute_features( sample_data, features )
     # copy features' values
     for t in range(T):
         datapoint = sample_data[t]['data']
@@ -47,7 +51,8 @@ def extract_features_from_sample( sample_data, features ):
     return sample_features
 
 
-def extract_samples( trace_data, readings_per_sample, features ):
+def _extract_samples( trace_data, seconds_per_sample, features ):
+    readings_per_sample = IMU_FREQUENCY * seconds_per_sample
     output = []
     readings_this_trace = len( trace_data )
     # compute the number of complete samples in the current trace
@@ -58,54 +63,11 @@ def extract_samples( trace_data, readings_per_sample, features ):
         end = (i+1) * readings_per_sample
         sample_data = trace_data[ start : end ]
         # extract features of the current points
-        sample_features = extract_features_from_sample( sample_data, features )
+        sample_features = _extract_features_from_sample( sample_data, features )
         # extend the existing dataset
         output.append( sample_features )
     # return samples
     return output
-
-
-'''
-Apply FFT to remove high frequency components of the IMU data
-
-@param sample_data: a list of numpy arrays. Each array is a sample of shape (T, 1, F),
-    where T is the time horizon, and F is the number of features.
-
-@param features: a list of strings. Each string identifies a feature (e.g., xAccl, time).
-    The feature 'time' must be one of the features.
-
-@return a numpy array of shape (T, 1, F) in which the high frequency components of
-    the signal are removed.
-'''
-def remove_noise( sample_data, features ):
-    T, _, F = sample_data.shape
-    time_index = features.index('time')
-    t_0 = sample_data[0, 0, time_index]
-    t_1 = sample_data[1, 0, time_index]
-    resolution = t_1 - t_0
-
-    for f in range(F):
-        if( features[f] == 'time' ): continue
-        y = sample_data[:, 0, f]
-        # compute FT of the feature f
-        w = scipy.fftpack.rfft(y)
-        # compute mean frequency
-        mean = np.mean( np.abs(w) )
-        # set the threshold to double the mean
-        thr = 2 * mean
-        # remove high frequency components
-        cutoff_idx = np.abs(w) < thr
-        w[cutoff_idx] = 0
-        # return to time domain by doing inverseFFT
-        y = scipy.fftpack.irfft(w)
-        sample_data[:, 0, f] = y
-    # return filtered sample
-    return sample_data
-
-
-def normalize_dataset( datasets ):
-    return datasets
-
 
 '''
 Each txt file has the form (note that it is not a valid JSON file due to the single quotes)
@@ -135,13 +97,12 @@ Each txt file has the form (note that it is not a valid JSON file due to the sin
     ]
 
 '''
-def load_data( data_dir, data_type, seconds_per_sample, features, use_noise_reduction=True, use_data_normalization=True, activities=None, verbose=False ):
-    if( activities == None ):
-        activities = "Standing|Walking|Jumping|Driving"
-    else:
-        activities = '|'.join(activities)
+def load_data( data_dir, data_type, seconds_per_sample, features, verbose=False ):
+    # generate classes map
+    idx_to_class = { -1 : 'Unknown', 0 : 'Standing', 1 : 'Walking', 2 : 'Jumping', 3 : 'Driving' }
+    class_to_idx = { 'Unknown' : -1, 'Standing' : 0, 'Walking' : 1, 'Jumping' : 2, 'Driving' : 3 }
     # create pattern for file
-    regex = "activity-dataset-(%s).txt" % ( activities )
+    regex = "activity-dataset-%s([0-9]+).txt" % data_type
     file_pattern = re.compile( regex );
     # get txt files matching the pattern
     txt_files = [
@@ -152,18 +113,10 @@ def load_data( data_dir, data_type, seconds_per_sample, features, use_noise_redu
     ]
     num_txt_files = len(txt_files)
     # get raw data from disk
-    if verbose:
-        status = {True : 'ENABLED', False : 'DISABLED'}
-        print 'Loading data:'
-        print '\tINFO: FFT-based noise reduction %s' % status[use_noise_reduction]
-        print '\tINFO: Data normalization %s' % status[use_data_normalization]
-        print '\tProgress: ',
-    else:
-        print 'Loading data: ',
+    print '\nLoading data [%s]: ' % data_type,
     pbar = ProgressBar( num_txt_files )
     # get content of the JSON files
     raw_data = {}
-    activities = set()
     for txt_file in txt_files:
         # read file content
         json_content = None
@@ -173,33 +126,17 @@ def load_data( data_dir, data_type, seconds_per_sample, features, use_noise_redu
         # convert JSON to python dict
         activity_data = json.loads( json_content )
         raw_data[ txt_file ] = activity_data
-        # append activity to set of activities
-        activities = activities | set([ d['type'] for d in activity_data ])
         # update progress bar
         pbar.next()
-    # if we assume that the IMU publish rate is perfect, then there is a fixed
-    # relation between seconds_per_sample and readings_per_sample, let's find it
-    txt_file_0 = txt_files[0]
-    activity_0 = raw_data[ txt_file_0 ]
-    trace_0 = activity_0[0]['seq']
-    datapoints_count = 0
-    start_time = trace_0[0]['time']
-    for datapoint in trace_0:
-        datapoints_count += 1
-        if datapoint['time'] - start_time >= seconds_per_sample: break
-    readings_per_sample = datapoints_count
-    if verbose:
-        print 'INFO: %d seconds/sample corresponds to %d readings/sample @ %.1f Hz' % (
-            seconds_per_sample,
-            readings_per_sample,
-            float(readings_per_sample)/float(seconds_per_sample)
-        )
     # do post-processing on the raw data
     num_traces = sum([ len(a) for a in raw_data.values() ])
-    print 'Processing data: ',
+    print 'Pre-Processing data: ',
     pbar = ProgressBar( num_traces )
-    # create different datasets for different activities
-    datasets = { act : [] for act in activities }
+    # create dataset
+    dataset = {
+        'input' : [],
+        'output' : []
+    }
     # iterate over the txt files' content
     for activity in raw_data.values():
         # iterate over the traces
@@ -207,33 +144,247 @@ def load_data( data_dir, data_type, seconds_per_sample, features, use_noise_redu
             trace_type = trace['type']
             trace_seq = trace['seq']
             # fragment the trace data into a sequence of smaller samples
-            samples = extract_samples( trace_seq, readings_per_sample, features )
-            # reduce noise (if enabled)
-            if use_noise_reduction:
-                # we expect the activity lo leave a unique fingerprint in the IMU readings
-                # but we know that IMUs are noisy. Let's remove that noise
-                for sample in samples:
-                    sample = remove_noise( sample, features )
-                    # append sample to the dataset
-                    datasets[trace_type].append( sample )
-            else:
-                # append samples to the dataset
-                datasets[trace_type].extend( samples )
+            samples = _extract_samples( trace_seq, seconds_per_sample, features )
+            for sample in samples:
+                # append sample to the dataset
+                dataset['input'].append( sample )
+                dataset['output'].append( class_to_idx[trace_type] )
             # update progress bar
             pbar.next()
-    # normalize data (if enabled)
-    if use_data_normalization:
-        datasets = normalize_dataset( datasets )
+    # make sure input and output are the same size
+    assert( len(dataset['input']) == len(dataset['output']) )
+    # shuffle data
+    indices = range( len(dataset['input']) )
+    random.shuffle( indices )
+    random.shuffle( indices )
+    dataset['input'] = [ dataset['input'][i] for i in indices ]
+    dataset['output'] = [ dataset['output'][i] for i in indices ]
+    # print some statistics (if needed)
     if verbose:
-        # print statistics about the datasets loaded
-        print 'INFO: Datasets:'
-        for activity_type, dataset in datasets.items():
-            print '\t%s: %d samples' % ( activity_type, len(dataset) )
-    # return datasets
-    return datasets
+        # print statistics about the dataset loaded
+        print '[INFO :: Data Loader] : Dataset size: %d samples' % len(dataset['input'])
+    # return dataset
+    return idx_to_class, class_to_idx, dataset
 
 
-def plot_sample( sample_data, x_axis, y_axes ):
+'''
+We expect the activity lo leave a unique fingerprint in the IMU readings
+but we know that IMUs are noisy.
+This function applies FFT to remove the high frequency components of the IMU readings.
+This function works in place and returns None.
+
+@param dataset: a dataset dictionary of the form
+    {
+        'input' : [ ... ],
+        'output' : [ ... ]
+    }
+    where 'input' is a list of numpy arrays. Each array is a sample of shape (T, 1, F),
+    where T is the time horizon, and F is the number of features. The value of 'output'
+    is not used.
+
+@param features: a list of strings. Each string identifies a feature (e.g., xAccl, time).
+    The feature 'time' must be one of the features.
+'''
+def remove_noise( dataset, features, verbose=False ):
+    sample_0 = dataset['input'][0]
+    _, _, F = sample_0.shape
+    print 'Removing noise: ',
+    pbar = ProgressBar( len(dataset['input'])*(F-1)  )
+    for f in range(F):
+        if( features[f] == 'time' ): continue # no need to filter time
+        for sample in dataset['input']:
+            y = sample[:, 0, f]
+            # compute FT of the feature f
+            w = scipy.fftpack.rfft(y)
+            # compute mean frequency
+            mean = np.mean( np.abs(w) )
+            # set the threshold to double the mean
+            thr = 2 * mean
+            # remove high frequency components
+            cutoff_idx = np.abs(w) < thr
+            w[cutoff_idx] = 0
+            # return to time domain by doing inverseFFT
+            y = scipy.fftpack.irfft(w)
+            sample[:, 0, f] = y
+            # update progress bar
+            pbar.next()
+    # return
+    return None
+
+
+'''
+Normalize readings to the range [0,1].
+This function works in place.
+
+@param dataset: a dataset dictionary of the form
+    {
+        'input' : [ ... ],
+        'output' : [ ... ]
+    }
+    where 'input' is a list of numpy arrays. Each array is a sample of shape (T, 1, F),
+    where T is the time horizon, and F is the number of features. The value of 'output'
+    is not used.
+
+@param feature_max (optional): a list of floats. feature_max[i] contains the max value
+    of the i-th in the training data. If not passed, feature_max will be computed on
+    the current data.
+
+@param feature_min (optional): a list of floats. feature_min[i] contains the min value
+    of the i-th in the training data. If not passed, feature_min will be computed on
+    the current data.
+
+@return: a tuple (feature_max, feature_min).
+'''
+def normalize_dataset( dataset, feature_max=None, feature_min=None, verbose=False ):
+    sample_0 = dataset['input'][0]
+    _, _, F = sample_0.shape
+    # compute feature_max and feature_min if not passed
+    if( feature_max == None or feature_min == None ):
+        if verbose:
+            print '[INFO :: Data Normalization] : Either feature_max or feature_min was not passed. They will be recomputed.'
+        # create placeholders for max and min of each feature
+        print 'Normalizing dataset: ',
+        pbar = ProgressBar( 2 * len(dataset['input']) * F  )
+        feature_max = [ sample_0[0,0,f] for f in range(F) ]
+        feature_min = [ sample_0[0,0,f] for f in range(F) ]
+        # compute max value for each feature
+        for f in range(F):
+            for sample in dataset['input']:
+                # compute max and min values for the current sample
+                sample_max = np.amax( sample[:,0,f] )
+                sample_min = np.amin( sample[:,0,f] )
+                # update feature's max/min
+                if sample_max > feature_max[f]: feature_max[f] = sample_max
+                if sample_min < feature_min[f]: feature_min[f] = sample_min
+                # update progress bar
+                pbar.next()
+    else:
+        if verbose:
+            print '[INFO :: Data Normalization] : feature_max and feature_min are passed. They will NOT be recomputed.'
+            print 'Normalizing dataset: ',
+            pbar = ProgressBar( len(dataset['input']) * F  )
+    # normalize dataset
+    for f in range(F):
+        for sample in dataset['input']:
+            sample[:,0,f] = ( sample[:,0,f] - feature_min[f] ) / ( feature_max[f] - feature_min[f] )
+            # update progress bar
+            pbar.next()
+    # return features boundaries
+    return ( feature_max, feature_min )
+
+
+'''
+Partitions the given dataset in data batches of size (at most) batch_size.
+
+@param dataset: a dataset dictionary of the form
+    {
+        'input' : [ ... ],
+        'output' : [ ... ]
+    }
+    where 'input' is a list of numpy arrays each with shape (T, 1, F), where T is the time horizon,
+    and F is the number of features; 'output' is a list of integers in which the i-th element
+    indicates the class id of the i-th input in 'input'.
+
+@param batch_size: the number of samples in each batch. The last batch can be smaller
+    than the others depending on the total number of samples and the value of batch_size.
+
+@return: a dataset dictionary of the form
+    {
+        'input' : [ ... ],
+        'output' : [ ... ]
+    }
+    where 'input' is a list of numpy arrays each with shape (T, batch_size, F),
+    where T is the time horizon, and F is the number of features; 'output' is a list of numpy arrays
+    each with shape (batch_size,) containing the ground-truth classes for each batch in 'input'.
+'''
+def batchify( dataset, batch_size ):
+    # compute number of batches
+    total_samples = len( dataset['input'] )
+    batch_size = min( batch_size, total_samples )
+    num_batches = int( math.ceil( float(total_samples) / float(batch_size) ) )
+    # create buckets
+    buckets = [ (l-batch_size, l) for l in range(batch_size, total_samples+1, batch_size) ]
+    if( total_samples % batch_size != 0 ):
+        buckets.append( (buckets[-1][1], total_samples) )
+    # iterate over the buckets and extract batches
+    batched_dataset = {
+        'input' : [],
+        'output' : []
+    }
+    for bucket in buckets:
+        i, f = bucket
+        # create batch
+        batch_input = np.concatenate( dataset['input'][i:f], axis=1 )
+        batch_output = np.asarray( dataset['output'][i:f] )
+        # append batch
+        batched_dataset['input'].append( batch_input )
+        batched_dataset['output'].append( batch_output )
+    # return data batches
+    return batched_dataset
+
+
+'''
+Iterates over the data batches and returns validation and training set using the cross-validation
+technique.
+
+@param batches: a dataset dictionary of the form
+    {
+        'input' : [ ... ],
+        'output' : [ ... ]
+    }
+    where 'input' is a list of numpy arrays each with shape (T, batch_size, F),
+    where T is the time horizon, and F is the number of features; 'output' is a list of numpy arrays
+    each with shape (batch_size,) containing the ground-truth classes for each batch in 'input'.
+
+@param validation_batches: an integer indicating how many batches will constitute the validation set
+    at each iteration.
+
+@return: an iterator over tuples. Each tuple contains two elements, training and validation batches,
+    respectively. Training and validation batches are stored in tuples of two elements, respectively,
+    list of numpy arrays of shape (T, batch_size, F) representing the batch input, and list of numpy
+    arrays of shape (batch_size,) representing the batch output.
+
+    Example:
+
+        at the i-th iteration:
+
+            (
+                (
+                    [ ... ],        # list of numpy arrays with training batches inputs
+                    [ ... ]         # list of numpy arrays with training batches output
+                ),
+                (
+                    [ ... ],        # list of numpy arrays with validation batches inputs
+                    [ ... ]         # list of numpy arrays with validation batches output
+                )
+            )
+'''
+def cross_validation( batches, validation_batches ):
+    total_batches = len( batches['input'] )
+    validation_batches = min( validation_batches, total_batches )
+    # create buckets
+    buckets = [ (l-validation_batches, l) for l in range(validation_batches, total_batches+1, validation_batches) ]
+    if( total_batches % validation_batches != 0 ):
+        buckets.append( (buckets[-1][1], total_batches) )
+    # iterate over the buckets and provide training and validation sets
+    for bucket in buckets:
+        i, f = bucket
+        # extract validation batches
+        validation_batches = (
+            batches['input'][i:f],
+            batches['output'][i:f]
+        )
+        # extract training batches
+        training_batches = (
+            batches['input'][0:i] + batches['input'][f:],
+            batches['output'][0:i] + batches['output'][f:]
+        )
+        # provide data for current iteration
+        yield ( training_batches, validation_batches )
+
+
+
+def plot_sample( sample_data, x_axis, y_axes, data_is_normalized ):
     num_features = len(y_axes)
     # create figure window
     plt.figure(1)
@@ -248,6 +399,9 @@ def plot_sample( sample_data, x_axis, y_axes ):
         # get Y series
         y_axis = y_axes[i]
         y = sample_data[:, 0, y_axis].flatten()
+        if data_is_normalized:
+            # adjust Y-limits (if data is normalized)
+            plt.ylim( 0, 1 )
         # plot
         plt.plot( x, y, 'r' )
     plt.show()
