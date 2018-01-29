@@ -7,9 +7,9 @@
 import tensorflow as tf
 from utils import ProgressBar
 
-def get_model( timesteps, num_features, rnn_state_size, num_classes, batch_size, forward_only=True, learning_rate=0.001 ):
+def get_model( timesteps, num_features, rnn_state_size, num_classes, forward_only=True, learning_rate=0.001 ):
     # define placeholders for the input X
-    X = tf.placeholder( tf.float32, [timesteps, batch_size, num_features] )
+    X = tf.placeholder( tf.float32, [timesteps, None, num_features] )
     # pick LSTM as type of RNN cell to use
     lstm_cell = tf.contrib.rnn.BasicLSTMCell( rnn_state_size )
 
@@ -32,13 +32,14 @@ def get_model( timesteps, num_features, rnn_state_size, num_classes, batch_size,
     # create container for output logits
     output_logits = []
     # define initial state and initial memory for the LSTM cell
-    hidden_state = tf.zeros([batch_size, rnn_state_size])
-    current_state = tf.zeros([batch_size, rnn_state_size])
+    zero_state = tf.placeholder( tf.float32, [None, rnn_state_size] )
+    hidden_state = zero_state
+    current_state = zero_state
     # the LSTM object takes the initial state as a tuple (hidden, input)
     lstm_state = ( hidden_state, current_state )
     # create neural network
     pbar = ProgressBar( maxVal=timesteps )
-    print 'Creating RNNs... ',
+    print '\nCreating RNNs... ',
     for t in range(timesteps):
         # Update the state of the LSTM chain after processing the input at time t
         lstm_output, lstm_state = lstm_cell( X[t], lstm_state )
@@ -60,10 +61,10 @@ def get_model( timesteps, num_features, rnn_state_size, num_classes, batch_size,
     Y = tf.nn.softmax( logits )
     # return pointers to probability distribution if in forward_only mode
     if( forward_only ):
-        return X, Y
+        return X, Y, zero_state
     # => this section creates the backpropagation (needed only for training)
     # define placeholders for the supervision (labels)
-    Y = tf.placeholder( tf.int32, [batch_size,] )
+    Y = tf.placeholder( tf.int32, [None,] )
 
     labels = tf.one_hot(Y, num_classes)
 
@@ -73,4 +74,4 @@ def get_model( timesteps, num_features, rnn_state_size, num_classes, batch_size,
     # create trainer operation
     train_op = tf.train.AdamOptimizer(learning_rate).minimize( batch_loss )
     # return pointers
-    return X, Y, batch_loss, train_op
+    return X, Y, zero_state, batch_loss, train_op
