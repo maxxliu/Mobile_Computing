@@ -2,7 +2,7 @@
 # @Date:   Tuesday, January 23rd 2018
 # @Email:  afdaniele@ttic.edu
 # @Last modified by:   afdaniele
-# @Last modified time: Sunday, January 28th 2018
+# @Last modified time: Monday, January 29th 2018
 
 import tensorflow as tf
 from utils import ProgressBar
@@ -10,7 +10,10 @@ from utils import ProgressBar
 def get_model( timesteps, num_features, rnn_state_size, num_classes, forward_only=True, learning_rate=0.001 ):
     # define placeholders for the input X
     X = tf.placeholder( tf.float32, [timesteps, None, num_features] )
-    # pick LSTM as type of RNN cell to use
+
+
+
+    #TODO: pick LSTM as type of RNN cell to use
     lstm_cell = tf.contrib.rnn.BasicLSTMCell( rnn_state_size )
 
 
@@ -40,38 +43,45 @@ def get_model( timesteps, num_features, rnn_state_size, num_classes, forward_onl
     # create neural network
     pbar = ProgressBar( maxVal=timesteps )
     print '\nCreating RNNs... ',
-    for t in range(timesteps):
-        # Update the state of the LSTM chain after processing the input at time t
-        lstm_output, lstm_state = lstm_cell( X[t], lstm_state )
-        # append the logit signal coming out of the LSTM to the output vector
-        output_logits.append( lstm_output )
-        # update progress bar
-        pbar.next()
+    with tf.variable_scope('RNN/'):
+        for t in range(timesteps):
+            # Update the state of the LSTM chain after processing the input at time t
+            lstm_cell = tf.contrib.rnn.BasicLSTMCell( rnn_state_size, reuse=t>0 )
+            lstm_output, lstm_state = lstm_cell( X[t], lstm_state )
+            # append the logit signal coming out of the LSTM to the output vector
+            output_logits.append( lstm_output )
+            # update progress bar
+            pbar.next()
 
-    # stack the logits signal into a tensor of shape [timesteps, batch_size, rnn_state_size]
-    logits_sequence = tf.stack( output_logits, axis=0 )
+    # # stack the logits signal into a tensor of shape [timesteps, batch_size, rnn_state_size]
+    # logits_sequence = tf.stack( output_logits, axis=0 )
+    # # compute the average logits by reducing the first axis
+    # mean_logits = tf.reduce_mean( logits_sequence, axis=0 )
+
 
     #TODO: try also to use only the output of the last RNN cell instead of computing the mean of all the outputs
+    mean_logits = output_logits[-1]
 
-    # compute the average logits by reducing the first axis
-    mean_logits = tf.reduce_mean( logits_sequence, axis=0 )
+
     # project the logits so that the last dimension equals the number of classes
     logits = tf.matmul( mean_logits, softmax_W ) + softmax_b
     # convert logits into a probability distribution over classes
     Y = tf.nn.softmax( logits )
+
     # return pointers to probability distribution if in forward_only mode
     if( forward_only ):
         return X, Y, zero_state
+
     # => this section creates the backpropagation (needed only for training)
     # define placeholders for the supervision (labels)
-    Y = tf.placeholder( tf.int32, [None,] )
-
-    labels = tf.one_hot(Y, num_classes)
+    groundtruth = tf.placeholder( tf.int32, [None,] )
+    labels = tf.one_hot(groundtruth, num_classes)
 
     # compute the log-loss (aka cross-entropy loss)
     loss = tf.nn.softmax_cross_entropy_with_logits( logits=logits, labels=labels )
-    batch_loss = tf.reduce_sum( loss )
+    batch_loss = tf.reduce_mean( loss )
+
     # create trainer operation
     train_op = tf.train.AdamOptimizer(learning_rate).minimize( batch_loss )
     # return pointers
-    return X, Y, zero_state, batch_loss, train_op
+    return X, Y, groundtruth, zero_state, batch_loss, train_op

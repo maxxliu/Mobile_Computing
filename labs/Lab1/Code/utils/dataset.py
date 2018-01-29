@@ -2,14 +2,13 @@
 # @Date:   Monday, January 22nd 2018
 # @Email:  afdaniele@ttic.edu
 # @Last modified by:   afdaniele
-# @Last modified time: Sunday, January 28th 2018
+# @Last modified time: Monday, January 29th 2018
 
 import os
 from os.path import isfile, join
 import re
 import ast
 from utils import ProgressBar
-import matplotlib.pyplot as plt
 import numpy as np
 import json
 import math
@@ -51,9 +50,12 @@ def _extract_features_from_sample( sample_data, features ):
     return sample_features
 
 
-def _extract_samples( trace_data, seconds_per_sample, features ):
+def _extract_samples( trace_data, seconds_per_sample, trace_trim_secs, decimation_factor, features ):
     readings_per_sample = IMU_FREQUENCY * seconds_per_sample
     output = []
+    # trim trace by removing the first and last trimming_readings
+    trimming_readings = IMU_FREQUENCY * trace_trim_secs
+    trace_data = trace_data[ trimming_readings : -trimming_readings ]
     readings_this_trace = len( trace_data )
     # compute the number of complete samples in the current trace
     num_complete_samples = int( math.floor(readings_this_trace/readings_per_sample) )
@@ -61,7 +63,7 @@ def _extract_samples( trace_data, seconds_per_sample, features ):
         # get datapoints of the current sample
         start = i * readings_per_sample
         end = (i+1) * readings_per_sample
-        sample_data = trace_data[ start : end ]
+        sample_data = trace_data[ start : end : decimation_factor ]
         # extract features of the current points
         sample_features = _extract_features_from_sample( sample_data, features )
         # extend the existing dataset
@@ -97,7 +99,7 @@ Each txt file has the form (note that it is not a valid JSON file due to the sin
     ]
 
 '''
-def load_data( data_dir, data_type, seconds_per_sample, features, use_data_shuffling, verbose=False ):
+def load_data( data_dir, data_type, seconds_per_sample, trace_trim_secs, decimation_factor, features, use_data_shuffling, verbose=False ):
     # generate classes map
     idx_to_class = { -1 : 'Unknown', 0 : 'Standing', 1 : 'Walking', 2 : 'Jumping', 3 : 'Driving' }
     class_to_idx = { 'Unknown' : -1, 'Standing' : 0, 'Walking' : 1, 'Jumping' : 2, 'Driving' : 3 }
@@ -111,6 +113,7 @@ def load_data( data_dir, data_type, seconds_per_sample, features, use_data_shuff
             and
             re.match( file_pattern, f )
     ]
+    txt_files = sorted( txt_files )
     num_txt_files = len(txt_files)
     # get raw data from disk
     print '\nLoading data [%s]: ' % data_type,
@@ -135,24 +138,30 @@ def load_data( data_dir, data_type, seconds_per_sample, features, use_data_shuff
     # create dataset
     dataset = {
         'input' : [],
-        'output' : []
+        'output' : [],
+        'origin' : []
     }
     # iterate over the txt files' content
-    for activity in raw_data.values():
+    global_identifier = 0
+    for txt_file in txt_files:
+        activity = raw_data[txt_file]
         # iterate over the traces
         for trace in activity:
             trace_type = trace['type']
             trace_seq = trace['seq']
             # fragment the trace data into a sequence of smaller samples
-            samples = _extract_samples( trace_seq, seconds_per_sample, features )
+            samples = _extract_samples( trace_seq, seconds_per_sample, trace_trim_secs, decimation_factor, features )
             for sample in samples:
                 # append sample to the dataset
                 dataset['input'].append( sample )
                 dataset['output'].append( class_to_idx[trace_type] )
+                dataset['origin'].append( global_identifier )
+            # increase the global identifier of the current trace
+            global_identifier += 1
             # update progress bar
             pbar.next()
-    # make sure input and output are the same size
-    assert( len(dataset['input']) == len(dataset['output']) )
+    # make sure input, output, and origin have the same size
+    assert( len(dataset['input']) == len(dataset['output']) and len(dataset['output']) == len(dataset['origin']) )
     # shuffle data (if needed)
     if use_data_shuffling:
         indices = range( len(dataset['input']) )
@@ -160,6 +169,7 @@ def load_data( data_dir, data_type, seconds_per_sample, features, use_data_shuff
         random.shuffle( indices )
         dataset['input'] = [ dataset['input'][i] for i in indices ]
         dataset['output'] = [ dataset['output'][i] for i in indices ]
+        dataset['origin'] = [ dataset['origin'][i] for i in indices ]
     # print some statistics (if needed)
     if verbose:
         # print statistics about the dataset loaded
@@ -200,7 +210,7 @@ def remove_noise( dataset, features, verbose=False ):
             # compute mean frequency
             mean = np.mean( np.abs(w) )
             # set the threshold to double the mean
-            thr = 2 * mean
+            thr = 6 * mean
             # remove high frequency components
             cutoff_idx = np.abs(w) < thr
             w[cutoff_idx] = 0
@@ -242,7 +252,7 @@ def normalize_dataset( dataset, feature_max=None, feature_min=None, verbose=Fals
     # compute feature_max and feature_min if not passed
     if( feature_max == None or feature_min == None ):
         if verbose:
-            print '[INFO :: Data Normalization] : Either feature_max or feature_min was not passed. They will be recomputed.'
+            print '[INFO :: Data Normalization] : Either feature_max or feature_min was not given. They will be recomputed.'
         # create placeholders for max and min of each feature
         print 'Normalizing dataset: ',
         pbar = ProgressBar( 2 * len(dataset['input']) * F  )
@@ -261,7 +271,7 @@ def normalize_dataset( dataset, feature_max=None, feature_min=None, verbose=Fals
                 pbar.next()
     else:
         if verbose:
-            print '[INFO :: Data Normalization] : feature_max and feature_min are passed. They will NOT be recomputed.'
+            print '[INFO :: Data Normalization] : feature_max and feature_min are given. They will NOT be recomputed.'
             print 'Normalizing dataset: ',
             pbar = ProgressBar( len(dataset['input']) * F  )
     # normalize dataset
@@ -385,7 +395,8 @@ def cross_validation( batches, validation_batches ):
 
 
 
-def plot_sample( sample_data, x_axis, y_axes, data_is_normalized ):
+def plot_sample( sample_data, x_axis, y_axes, data_is_normalized, block=True ):
+    import matplotlib.pyplot as plt
     num_features = len(y_axes)
     # create figure window
     plt.figure(1)
@@ -393,7 +404,7 @@ def plot_sample( sample_data, x_axis, y_axes, data_is_normalized ):
     for i in range( num_features ):
         # create subplot
         fig_num = i+1
-        plot_pos = 310 + fig_num
+        plot_pos = num_features*100 + 10 + fig_num
         plt.subplot(plot_pos)
         # get X series
         x = sample_data[:, 0, x_axis].flatten()
@@ -405,4 +416,4 @@ def plot_sample( sample_data, x_axis, y_axes, data_is_normalized ):
             plt.ylim( 0, 1 )
         # plot
         plt.plot( x, y, 'r' )
-    plt.show()
+    plt.show(block=block)
