@@ -9,6 +9,7 @@ from utils import *
 import numpy as np
 from machine_learning import *
 from time import gmtime, strftime
+from prettytable import PrettyTable
 
 # define constants
 features = [ 'xAccl', 'yAccl', 'zAccl', 'time' ]
@@ -24,7 +25,7 @@ num_classes = 4                 # classes to chose from (i.e., Standing, Walking
 use_data_shuffling = True       # whether to shuffle the samples
 use_noise_reduction = True      # whether to use FFT(Fast Fourier Transform) to remove noise
 use_data_normalization = True   # whether to normalize the features values to the range [0,1]
-learning_rate = 0.001           # learning rate to use for training the network
+learning_rate = 0.01           # learning rate to use for training the network
 max_epochs = 50                 # maximum number of epochs to train the model for
 verbose = True                  # enables the verbose mode
 
@@ -344,6 +345,31 @@ for epoch in range(1, max_epochs+1, 1):
         epoch_eval_loss, epoch_eval_accuracy,
         epoch_per_trace_accuracy
     )
+
+    # compute confusion matrix
+    num_traces_per_class = [ 0 for _ in range(num_classes) ]
+    confusion_matrix = [ [ 0 for _c in range(num_classes) ] for _r in range(num_classes) ]
+    for i in range(num_classes):
+        counter = [ 0 for _ in range(num_classes) ]
+        for trace_id in origin_to_prediction_distribution:
+            if trace_id_to_class[trace_id] != i: continue
+            num_traces_per_class[i] += 1
+            dist_cur_trace = origin_to_prediction_distribution[trace_id]
+            prediction_cur_trace = np.argmax( dist_cur_trace )
+            counter[ prediction_cur_trace ] += 1
+        confusion_matrix[i] = counter
+    # print confusion matrix
+    class_names = ['X'] + [ idx_to_class[idx] for idx in range(num_classes) ]
+    t = PrettyTable( class_names )
+    print '\nConfusion Matrix [Epoch %d]:' % epoch
+    for i in range(num_classes):
+        probs = [
+            '%d%%' % int(100.0*float(confusion_matrix[i][j])/float(num_traces_per_class[i]))
+            for j in range(num_classes)
+        ]
+        t.add_row( [ idx_to_class[i] ] + probs )
+    print t
+    print
 
     # publish data on tensorboard
     summ = session.run(
