@@ -1,0 +1,100 @@
+\documentclass{article}
+\usepackage{iclr2016_conference,times}
+
+\usepackage{subfig}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{amsmath,amssymb}
+\usepackage{natbib}
+\usepackage{wrapfig}
+\usepackage{graphicx}
+\bibliographystyle{abbrvnat}
+
+\title{
+	Mobile Computing (CS23400$/$1) \vspace{-4pt} \\
+	{\Large Lab 1 - Report} \vspace{6pt} \\
+	{\large Andrea F. Daniele $\hspace{2.2cm}$ Max X. Liu $\hspace{2.2cm}$ Noah A. Hirsch}
+}
+
+\begin{document}
+
+\maketitle
+
+
+\vspace{-1.2cm}
+
+\section{Task}
+\vspace{-.3cm}
+* Here we can write something about what is the task we are trying to solve in this lab (i.e., activity
+classification). A simple copy-paste of their description of the lab should be enough.
+
+* Let's emphasize that we want this model to work on cheap IMUs (like those embedded in
+modern mobile phones).
+
+
+\section{Challenges}
+\vspace{-.3cm}
+* Here we can say something about the fact that cheap IMUs produce noisy readings that make
+the problem of classifying activities harder.
+
+\section{Proposed Approach}
+\vspace{-.3cm}
+* Here we can talk about what is the main idea behind our approach. We can say that we framed
+the problem as a general data classification problem and use state-of-the-art machine learning
+techniques to solve it.
+
+* Why we chose Recurrent Neural Network, why the LSTM in particular.
+
+* Let's introduce the fact that we do some data post-processing before feeding it to the model
+(the next section will be about data post-processing).
+
+\subsection{Data post-processing}
+\vspace{-.3cm}
+* Here we talk about the fact that we downsample the readings from $128Hz$ to $16Hz$. Let's
+justify it by saying that we tried different factors and empirically chose the one that maximizes
+reduction while preserving signal shape (we tried $2, 4, 8, 16, 32$).
+
+* Let's also talk about the trimming phase, in which we discard the first and last $2$ seconds
+of each trace because of the time spent to say ''Now you can start jumping``, or the time
+required to switch windows (while Driving the car) and the time when somebody stops earlier and
+asks ''Can I stop jumping?``.
+
+* We also explain that since the signals are periodic (for all the activities that we have), we can 
+easily classify the activity based on a few seconds of data. Thus we split a $10$ seconds long
+trace into $6$ smaller samples of $1$ second each (the $4$ seconds that are missing are removed
+in the trimming phase above).
+
+
+\subsection{Recurrent Neural Network}
+\vspace{-.3cm}
+* Here we explain and show the architecture of our neural network by unwrapping the timesteps.
+
+* Explain what is X, what is Y, and what is the hidden state. Do not talk about batching here.
+
+* Explain (briefly) the training process and how gradient back-propagation works.
+
+
+\subsection{Dataset}
+\vspace{-.3cm} 
+* Here we just talk about how much data (samples) we used for training, how much for validation
+and how much for testing.
+
+* Depending on whether we decide to use cross-validation we talk about it too.
+
+
+\section{Results}
+\vspace{-.3cm}
+* Here we discuss and show a plot of the training/validation loss/accuracy over time (over epochs).
+
+* We show the confusion matrix computed either on the validation set (if not cross-validation) or
+on the training set (if cross-validation).
+
+
+\section{Conclusion}
+\vspace{-.3cm}
+* Here we can talk about the possibility to deploy our model on mobile devices. Let's just say that 
+there exist an implementation for mobile devices of tensorflow so our approach can be easily and 
+seamlessly deployed on a mobile device.
+
+\end{document}
