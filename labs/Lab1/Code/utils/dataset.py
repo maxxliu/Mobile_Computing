@@ -36,6 +36,34 @@ def _compute_features( sample_data, features ):
     #
     #TODO
 
+    # adding in first derivative and second derivative features here
+    xAccl = []
+    yAccl = []
+    zAccl = []
+
+    for s in sample_data:
+        xAccl.append(s['data']['xAccl'])
+        yAccl.append(s['data']['yAccl'])
+        zAccl.append(s['data']['zAccl'])
+
+    xAcclD1 = np.gradient(np.array(xAccl))
+    yAcclD1 = np.gradient(np.array(yAccl))
+    zAcclD1 = np.gradient(np.array(zAccl))
+
+    xAcclD2 = np.gradient(xAcclD1)
+    yAcclD2 = np.gradient(yAcclD1)
+    zAcclD2 = np.gradient(zAcclD1)
+
+    for i in range(len(sample_data)):
+        sample_data[i]['data']['xAcclD1'] = xAcclD1[i]
+        sample_data[i]['data']['yAcclD1'] = yAcclD1[i]
+        sample_data[i]['data']['zAcclD1'] = zAcclD1[i]
+
+        sample_data[i]['data']['xAcclD2'] = xAcclD2[i]
+        sample_data[i]['data']['yAcclD2'] = yAcclD2[i]
+        sample_data[i]['data']['zAcclD2'] = zAcclD2[i]
+
+
 def _extract_features_from_sample( sample_data, features ):
     T = len(sample_data)    # T = timesteps
     F = len(features)       # F = number of features

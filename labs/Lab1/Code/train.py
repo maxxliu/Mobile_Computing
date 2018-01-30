@@ -12,7 +12,8 @@ from time import gmtime, strftime
 from prettytable import PrettyTable
 
 # define constants
-features = [ 'xAccl', 'yAccl', 'zAccl', 'time' ]
+features = [ 'xAccl', 'yAccl', 'zAccl', 'time', 'xAcclD1', 'yAcclD1', 'zAcclD1', 'xAcclD2', 'yAcclD2', 'zAcclD2' ]
+# features = [ 'xAccl', 'yAccl', 'zAccl', 'time' ]
 data_dir = "../Data"            # directory containing the dataset
 logs_dir = "../tensorboard_logs"
 models_dir = "../models"
@@ -23,9 +24,9 @@ batch_size = 6                  # number of traces used in parallel to train the
 rnn_state_size = 50             # size of the memory of the RNN cells
 num_classes = 4                 # classes to chose from (i.e., Standing, Walking, Jumping, Driving)
 use_data_shuffling = True       # whether to shuffle the samples
-use_noise_reduction = True      # whether to use FFT(Fast Fourier Transform) to remove noise
-use_data_normalization = True   # whether to normalize the features values to the range [0,1]
-learning_rate = 0.01           # learning rate to use for training the network
+use_noise_reduction = False      # whether to use FFT(Fast Fourier Transform) to remove noise
+use_data_normalization = False   # whether to normalize the features values to the range [0,1]
+learning_rate = 0.001           # learning rate to use for training the network
 max_epochs = 50                 # maximum number of epochs to train the model for
 verbose = True                  # enables the verbose mode
 
