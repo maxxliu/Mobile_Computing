@@ -21,7 +21,9 @@ IMU_FREQUENCY = 128             # average frequency computed on the dataset
 
 
 def _compute_features( sample_data, features ):
+    # raw features are those from the IMU
     raw_features = sample_data[0]['data'].keys()
+    # adjoint features are computed from the raw data through some post-processing
     adj_features = set(features) - set(raw_features)
     # return if there is no adjoint feature
     if len(adj_features) == 0: return
@@ -103,6 +105,7 @@ def load_data( data_dir, data_type, seconds_per_sample, trace_trim_secs, decimat
     # generate classes map
     idx_to_class = { -1 : 'Unknown', 0 : 'Standing', 1 : 'Walking', 2 : 'Jumping', 3 : 'Driving' }
     class_to_idx = { 'Unknown' : -1, 'Standing' : 0, 'Walking' : 1, 'Jumping' : 2, 'Driving' : 3 }
+    trace_id_to_class = {}
     # create pattern for file
     regex = "activity-dataset-%s([0-9]+).txt" % data_type
     file_pattern = re.compile( regex );
@@ -156,6 +159,8 @@ def load_data( data_dir, data_type, seconds_per_sample, trace_trim_secs, decimat
                 dataset['input'].append( sample )
                 dataset['output'].append( class_to_idx[trace_type] )
                 dataset['origin'].append( global_identifier )
+            # store groundtruth for the current trace_id
+            trace_id_to_class[global_identifier] = class_to_idx[trace_type]
             # increase the global identifier of the current trace
             global_identifier += 1
             # update progress bar
@@ -175,7 +180,7 @@ def load_data( data_dir, data_type, seconds_per_sample, trace_trim_secs, decimat
         # print statistics about the dataset loaded
         print '[INFO :: Data Loader] : Dataset size: %d samples' % len(dataset['input'])
     # return dataset
-    return idx_to_class, class_to_idx, dataset
+    return idx_to_class, class_to_idx, trace_id_to_class, dataset
 
 
 '''
@@ -320,16 +325,19 @@ def batchify( dataset, batch_size ):
     # iterate over the buckets and extract batches
     batched_dataset = {
         'input' : [],
-        'output' : []
+        'output' : [],
+        'origin' : []
     }
     for bucket in buckets:
         i, f = bucket
         # create batch
         batch_input = np.concatenate( dataset['input'][i:f], axis=1 )
         batch_output = np.asarray( dataset['output'][i:f], np.int32 )
+        batch_origin = dataset['origin'][i:f]
         # append batch
         batched_dataset['input'].append( batch_input )
         batched_dataset['output'].append( batch_output )
+        batched_dataset['origin'].append( batch_origin )
     # return data batches
     return batched_dataset
 
@@ -362,7 +370,8 @@ technique.
             (
                 (
                     [ ... ],        # list of numpy arrays with training batches inputs
-                    [ ... ]         # list of numpy arrays with training batches output
+                    [ ... ],        # list of numpy arrays with training batches output
+                    [ ... ]         # list of integers with training batches origins
                 ),
                 (
                     [ ... ],        # list of numpy arrays with validation batches inputs
@@ -383,7 +392,8 @@ def cross_validation( batches, validation_batches ):
         # extract validation batches
         validation_batches = (
             batches['input'][i:f],
-            batches['output'][i:f]
+            batches['output'][i:f],
+            batches['origin'][i:f]
         )
         # extract training batches
         training_batches = (
