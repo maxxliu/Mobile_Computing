@@ -96,14 +96,14 @@ case, the fingerprints of all the activities that we are trying to classify pres
 This means that we don't need to focus on the entire trace but we can look at part of it.
 
 \textbf{Observation 2:} It is possible to down-sample our readings from $128Hz$ to a lower
-rate as long as we don't loose the profile of the signals.
+rate as long as we don't lose the profile of the signals.
 
 We empirically found that it is possible to classify one trace just by looking at $1$ seconds of
 readings down-sampled by a factor of $8$. Thus, our chain of RNNs contains only $16$ cells.
 We partition each trace from the training set into $10$ smaller samples of $1$ second each,
 and we treat them as independent samples.
 
-Another observation is that, while collecting data, people tend to waste time right after started
+Another observation is that, while collecting data, people tend to waste time following the start of
 logging and sometimes before the end of the log (e.g., time spent to switch window and start
 driving the car, somebody stopped jumping too early). Using these bad samples to train the model
 is not just useless (because they are not informative) but can also confuse the neural network (
@@ -144,15 +144,15 @@ function~\cite{rubinstein1999cross}.
 
 
 \section{Results}
-\vspace{-.3cm} 
+\vspace{-.3cm}
 We trained our model on $900$ samples of $16$ IMU readings each. We removed $144$ samples
 from the training data and used it for testing our model and decide when to stop training.
-After only $4$ epochs of training, our training accuracy hits $100\%$ as well as our 
-post-epoch testing accuracy. 
-The inclusion of the first derivative of acceleration with respect to time raised the accuracy 
-of our model by almost $25\%$, as it allows the RNN to access the change rate of the 
+After only $4$ epochs of training, our training accuracy hits $100\%$ as well as our
+post-epoch testing accuracy.
+The inclusion of the first derivative of acceleration with respect to time raised the accuracy
+of our model by almost $25\%$, as it allows the RNN to access the change rate of the
 acceleration readings. Figure~\ref{fig:acc_ptpe} plots the per-trace training
-accuracy over the $50$ epochs, which shows the rate of cross-validation correctness 
+accuracy over the $50$ epochs, which shows the rate of cross-validation correctness
 for each epoch.
 
 \begin{figure}[h]
@@ -161,11 +161,11 @@ for each epoch.
     \caption{Accuracy per-trace per-epoch \label{fig:acc_ptpe}}
 \end{figure}
 
-On the held-out test set (which is data that was not included in any of the training epochs), 
-our model scores a per-trace accuracy of $92\%$. The accuracy reduction is due to the 
-model having difficulty distinguishing between standing and walking. We anticipate with 
-more time and traces, this confusion will decrease as the model learns the subtle distinctions 
-between the two activities. Figure~\ref{fig:confusion} shows the confusion matrix for the 
+On the held-out test set (which is data that was not included in any of the training epochs),
+our model scores a per-trace accuracy of $92\%$. The accuracy reduction is due to the
+model having difficulty distinguishing between standing and walking. We anticipate with
+more time and traces, this confusion will decrease as the model learns the subtle distinctions
+between the two activities. Figure~\ref{fig:confusion} shows the confusion matrix for the
 final epoch on the held-out test set. Figure~\ref{fig:test_set_labels} reports the predictions
 of our model on the provided test set.
 
@@ -177,7 +177,7 @@ of our model on the provided test set.
                 \caption{Confusion Matrix \label{fig:confusion}}
         \end{subfigure}%
         \vspace{.5cm}
-		      
+
         \begin{subfigure}[t]{0.44\textwidth}
                 \hfil
                 \raisebox{0.68cm}{%
@@ -193,14 +193,14 @@ of our model on the provided test set.
 
 \section{Conclusion}
 \vspace{-.3cm}
-Overall, our algorithm is very promising. It only relies on the reading of a sensor that is very 
-popular in mobile devices. After training, it requires very low CPU and battery usage for 
-activity classification, and can be easily run in the background on many devices. 
-Additionally, we implemented our model using \textit{\ TensorFlow}, an open source software 
+Overall, our algorithm is very promising. It only relies on the reading of a sensor that is very
+popular in mobile devices. After training, it requires very low CPU and battery usage for
+activity classification, and can be easily run in the background on many devices.
+Additionally, we implemented our model using \textit{\ TensorFlow}, an open source software
 library for numerical computation using data flow graphs, which is already available for the most
-common mobile devices. Thus, our method can be deployed easily and seamlessly to mobile 
-devices, whether on a vehicle or on a smartphone. Expansion of this model to include more 
-realistic activity classes, such as turning, would allow one to achieve accurate activity 
+common mobile devices. Thus, our method can be deployed easily and seamlessly to mobile
+devices, whether on a vehicle or on a smartphone. Expansion of this model to include more
+realistic activity classes, such as turning, would allow one to achieve accurate activity
 detection for many uses concerning safety and usability.
 
 \bibliographystyle{abbrvnat}
