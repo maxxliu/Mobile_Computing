@@ -26,31 +26,35 @@
 
 \section{Task}
 \vspace{-.3cm}
-\textbf{Assigned to: Max}
-
-* Here we can write something about what is the task we are trying to solve in this lab (i.e., activity
-classification). A simple copy-paste of their description of the lab should be enough.
-
-* Let's emphasize that we want this model to work on cheap IMUs (like those embedded in
-modern mobile phones).
-
+The goal of this lab is to collect and leverage IMU data from a small robotic
+car to classify a set of activities. Using the IMU data we can implement machine
+learning models to classify IMU traces into four distinct activities (walking,
+jumping, standing, driving). Furthermore, the classification model used should
+be robust to challenges with low quality IMU's and mobile computation limits.
 
 \section{Challenges}
 \vspace{-.3cm}
-\textbf{Assigned to: Max}
-
-* Here we can say something about the fact that cheap IMUs produce noisy readings that make
-the problem of classifying activities harder.
+One of the primary challenges faced was extracting consistent and relevant data
+from the IMU traces. Due to imperfect measurements from the IMU, the raw data
+contains a lot of noisy readings that complicate the problem of classifying
+activities. Furthermore, it is very computationally intensive to train Recurrent
+Neural Networks with such large trace files; additional pre-processing of data
+is necessary to help train the model. An additional concern was that there may
+not be enough data and/or features to effectively train a Recurrent Neural Network.
 
 \section{Proposed Approach}
 \vspace{-.3cm}
 \textbf{Assigned to: Max}
 
-* Here we can talk about what is the main idea behind our approach. We can say that we framed
-the problem as a general data classification problem and use state-of-the-art machine learning
-techniques to solve it.
+The task naturally lended itself to a general data classification problem. We decided
+to use a Recurrent Neural Network to solve this problem; specifically, we used LSTM
+(Long Short Term Memory) networks. RNN's are extremely effective with this type of
+trace data because it is able to take in sequences of data and make classifications
+based on the context of both recent and past information. Thus, we can easily look at features
+such as changes in x, y, z acceleration over some period of time. In order to quickly and effectively train
+the RNN it is necessary to first do some data processing to reduce noise, decrease trace sizes, and
+add additional features.
 
-* Why we chose Recurrent Neural Network, why the LSTM in particular.
 
 * Let's introduce the fact that we do some data post-processing before feeding it to the model
 (the next section will be about data post-processing).
@@ -68,7 +72,7 @@ of each trace because of the time spent to say ''Now you can start jumping``, or
 required to switch windows (while Driving the car) and the time when somebody stops earlier and
 asks ''Can I stop jumping?``.
 
-* We also explain that since the signals are periodic (for all the activities that we have), we can 
+* We also explain that since the signals are periodic (for all the activities that we have), we can
 easily classify the activity based on a few seconds of data. Thus we split a $10$ seconds long
 trace into $6$ smaller samples of $1$ second each (the $4$ seconds that are missing are removed
 in the trimming phase above).
@@ -86,7 +90,7 @@ in the trimming phase above).
 
 
 \subsection{Dataset}
-\vspace{-.3cm} 
+\vspace{-.3cm}
 \textbf{Assigned to: Andrea}
 
 * Here we just talk about how much data (samples) we used for training, how much for validation
@@ -109,8 +113,8 @@ on the training set (if cross-validation).
 \vspace{-.3cm}
 \textbf{Assigned to: Noah}
 
-* Here we can talk about the possibility to deploy our model on mobile devices. Let's just say that 
-there exist an implementation for mobile devices of tensorflow so our approach can be easily and 
+* Here we can talk about the possibility to deploy our model on mobile devices. Let's just say that
+there exist an implementation for mobile devices of tensorflow so our approach can be easily and
 seamlessly deployed on a mobile device.
 
 \end{document}
