@@ -1,7 +1,6 @@
 \documentclass{article}
 \usepackage{iclr2016_conference,times}
 
-\usepackage{subfig}
 \usepackage{float}
 \usepackage{hyperref}
 \usepackage{url}
@@ -10,7 +9,12 @@
 \usepackage{wrapfig}
 \usepackage{graphicx}
 \usepackage{soul}
+
 \bibliographystyle{abbrvnat}
+
+
+\usepackage{caption}
+\usepackage{subcaption}
 
 \title{
 	Mobile Computing (CS23400$/$1) \vspace{-4pt} \\
@@ -138,15 +142,11 @@ We train our model using the Adam optimizer~\cite{kingma2014adam}.
 The learning process is driven by the minimization of the cross-entropy loss
 function~\cite{rubinstein1999cross}.
 
-\subsection{Dataset}
-\vspace{-.2cm}
-
-We trained our model on $900$ samples of $16$ IMU readings each. We removed $144$ samples
-from the training data and used it for testing our model and decide when to stop training.
-
 
 \section{Results}
 \vspace{-.3cm} 
+We trained our model on $900$ samples of $16$ IMU readings each. We removed $144$ samples
+from the training data and used it for testing our model and decide when to stop training.
 After only $4$ epochs of training, our training accuracy hits $100\%$ as well as our 
 post-epoch testing accuracy. 
 The inclusion of the first derivative of acceleration with respect to time raised the accuracy 
@@ -166,13 +166,30 @@ our model scores a per-trace accuracy of $92\%$. The accuracy reduction is due t
 model having difficulty distinguishing between standing and walking. We anticipate with 
 more time and traces, this confusion will decrease as the model learns the subtle distinctions 
 between the two activities. Figure~\ref{fig:confusion} shows the confusion matrix for the 
-final epoch on the held-out test set.
+final epoch on the held-out test set. Figure~\ref{fig:test_set_labels} reports the predictions
+of our model on the provided test set.
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.44\linewidth]{figures/confusion_matrix}
-    \caption{Confusion Matrix \label{fig:confusion}}
-\end{figure}
+\begin{wrapfigure}{r}{0.5\textwidth}
+		\vspace{-.5cm}
+        \centering
+        \begin{subfigure}[t]{0.9\linewidth}
+                  \includegraphics[width=\textwidth,height=\textwidth]{figures/confusion_matrix}
+                \caption{Confusion Matrix \label{fig:confusion}}
+        \end{subfigure}%
+        \vspace{.5cm}
+		      
+        \begin{subfigure}[t]{0.44\textwidth}
+                \hfil
+                \raisebox{0.68cm}{%
+                  \includegraphics[width=\textwidth]{figures/test_set_table}%
+                }
+                \vspace{-1cm}
+                \caption{Predicted activities for the given test set \label{fig:test_set_labels}}
+                \hfill
+        \end{subfigure}%
+\end{wrapfigure}
+
+
 
 \section{Conclusion}
 \vspace{-.3cm}
