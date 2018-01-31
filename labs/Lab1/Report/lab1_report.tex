@@ -103,18 +103,27 @@ and how much for testing.
 \vspace{-.3cm}
 \textbf{Assigned to: Noah}
 
-* Here we discuss and show a plot of the training/validation loss/accuracy over time (over epochs).
+\t The accuracy of our recurrent neural network is very high. Having cut each trace into one-second samples, each epoch of training contained 1041 samples. After only 4 epochs of training, our training accuracy hit 100\% as well as our post-epoch testing accuracy. Of course, this varied throughout the 50-epoch training, but accuracy remained near-perfect through all epochs after 3. The inclusion of the first derivative of acceleration with respect to time raised the accuracy of our model by almost 25\%, as it allowed the RNN to access the shape of the acceleration readings. Included below in Figure 1 is a plot of per-trace accuracy over the 50 epochs, which shows the rate of cross-validation correctness for each epoch.
 
-* We show the confusion matrix computed either on the validation set (if not cross-validation) or
-on the training set (if cross-validation).
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\linewidth]{figures/acc_ptpe.png}
+    \caption{Accuracy per-trace per-epoch \label{fig:acc_ptpe}}
+\end{figure}
 
+\t Using held-out data, which is data that was not included in any of the training epochs, we observe testing accuracy of about 92\%, which is very high. The accuracy reduction is due to the model having difficulty distinguishing between standing and walking. We anticipate with more time and traces, this confusion will decrease as the model learns the subtle distinctions between the two activites. Shown below in Figure 2 is the corresponding confusion matrix for the final epoch using held-out data.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/confusion.png}
+    \caption{Confusion Matrix \label{fig:confusion}}
+\end{figure}
 
 \section{Conclusion}
 \vspace{-.3cm}
 \textbf{Assigned to: Noah}
 
-* Here we can talk about the possibility to deploy our model on mobile devices. Let's just say that
-there exist an implementation for mobile devices of tensorflow so our approach can be easily and
-seamlessly deployed on a mobile device.
+\t Overall, this algorithm is very promising. It only relies on the reading of a sensor that is very popular in mobile devices, the IMU. After training, it requires very low CPU and battery usage for activity identification, and can be easily run in the background on many devices. Additionally, there exists extensive implementation of tensorflow for a variety of mobile devices. So, this algorithm can be deployed easily and seamlessly to mobile devices whether on a vehicle or on a smartphone. Expansion of this model to include more realistic identification classes, such as turning, would allow one to achieve accurate activity detection for many uses concerning safety and usability.  
+
 
 \end{document}
