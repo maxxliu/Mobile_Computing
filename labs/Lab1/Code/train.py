@@ -2,7 +2,7 @@
 # @Date:   Monday, January 22nd 2018
 # @Email:  afdaniele@ttic.edu
 # @Last modified by:   afdaniele
-# @Last modified time: Tuesday, January 30th 2018
+# @Last modified time: Wednesday, January 31st 2018
 
 
 from utils import *
@@ -13,10 +13,9 @@ from prettytable import PrettyTable
 
 # define constants
 features = [ 'xAccl', 'yAccl', 'zAccl', 'time', 'xAcclD1', 'yAcclD1', 'zAcclD1', 'xAcclD2', 'yAcclD2', 'zAcclD2' ]
-# features = [ 'xAccl', 'yAccl', 'zAccl', 'time' ]
 data_dir = "../Data"            # directory containing the dataset
-logs_dir = "../tensorboard_logs"
-models_dir = "../models"
+logs_dir = "../tensorboard_logs"# directory where to store tensorboard logs
+models_dir = "../models"        # directory where to save trained models
 seconds_per_sample = 1          # number of seconds of IMU readings in one sample
 decimation_factor = 8           # each sample retains one datapoint every decimation_factor datapoints
 trace_trim_secs = 2             # do not consider the first and last trace_trim_secs seconds of the trace
@@ -26,7 +25,7 @@ num_classes = 4                 # classes to chose from (i.e., Standing, Walking
 use_data_shuffling = True       # whether to shuffle the samples
 use_noise_reduction = False     # whether to use FFT(Fast Fourier Transform) to remove noise
 use_data_normalization = False  # whether to normalize the features values to the range [0,1]
-use_heldout_test_set = False     # whether to take 20% out of the training data for testing (never train on it)
+use_heldout_test_set = True     # whether to take 20% out of the training data for testing (never train on it)
 learning_rate = 0.001           # learning rate to use for training the network
 max_epochs = 50                 # maximum number of epochs to train the model for
 verbose = True                  # enables the verbose mode

@@ -2,7 +2,7 @@
 # @Date:   Tuesday, January 23rd 2018
 # @Email:  afdaniele@ttic.edu
 # @Last modified by:   afdaniele
-# @Last modified time: Monday, January 29th 2018
+# @Last modified time: Wednesday, January 31st 2018
 
 import tensorflow as tf
 from utils import ProgressBar
@@ -10,17 +10,8 @@ from utils import ProgressBar
 def get_model( timesteps, num_features, rnn_state_size, num_classes, forward_only=True, learning_rate=0.001 ):
     # define placeholders for the input X
     X = tf.placeholder( tf.float32, [timesteps, None, num_features] )
-
-
-
-    #TODO: pick LSTM as type of RNN cell to use
+    # pick LSTM as type of RNN cell to use
     lstm_cell = tf.contrib.rnn.BasicLSTMCell( rnn_state_size )
-
-
-    # #TODO: use this if you want to do deep learning
-    # def lstm_cell_fcn(): return tf.contrib.rnn.BasicLSTMCell( rnn_state_size )
-    # lstm_cell = tf.contrib.rnn.MultiRNNCell([lstm_cell_fcn() for _ in range(lstm_layers)])
-
     # define Softmax projection matrix and bias factor
     softmax_W = tf.get_variable( "softmax_W",
         [rnn_state_size, num_classes],
@@ -53,15 +44,8 @@ def get_model( timesteps, num_features, rnn_state_size, num_classes, forward_onl
             # update progress bar
             pbar.next()
 
-    # # stack the logits signal into a tensor of shape [timesteps, batch_size, rnn_state_size]
-    # logits_sequence = tf.stack( output_logits, axis=0 )
-    # # compute the average logits by reducing the first axis
-    # mean_logits = tf.reduce_mean( logits_sequence, axis=0 )
-
-
-    #TODO: try also to use only the output of the last RNN cell instead of computing the mean of all the outputs
+    # use only the output of the last RNN cell instead of computing the mean of all the outputs
     mean_logits = output_logits[-1]
-
 
     # project the logits so that the last dimension equals the number of classes
     logits = tf.matmul( mean_logits, softmax_W ) + softmax_b
