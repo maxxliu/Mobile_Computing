@@ -2,13 +2,13 @@
 # @Date:   Monday, January 22nd 2018
 # @Email:  afdaniele@ttic.edu
 # @Last modified by:   afdaniele
-# @Last modified time: Monday, January 29th 2018
+# @Last modified time: Tuesday, January 30th 2018
 
 
 from utils import *
 import numpy as np
 from machine_learning import *
-from time import gmtime, strftime
+from time import localtime, strftime
 from prettytable import PrettyTable
 
 # define constants
@@ -24,8 +24,9 @@ batch_size = 6                  # number of traces used in parallel to train the
 rnn_state_size = 50             # size of the memory of the RNN cells
 num_classes = 4                 # classes to chose from (i.e., Standing, Walking, Jumping, Driving)
 use_data_shuffling = True       # whether to shuffle the samples
-use_noise_reduction = False      # whether to use FFT(Fast Fourier Transform) to remove noise
-use_data_normalization = False   # whether to normalize the features values to the range [0,1]
+use_noise_reduction = False     # whether to use FFT(Fast Fourier Transform) to remove noise
+use_data_normalization = False  # whether to normalize the features values to the range [0,1]
+use_heldout_test_set = False     # whether to take 20% out of the training data for testing (never train on it)
 learning_rate = 0.001           # learning rate to use for training the network
 max_epochs = 50                 # maximum number of epochs to train the model for
 verbose = True                  # enables the verbose mode
@@ -46,6 +47,7 @@ if verbose:
     print '[INFO :: Model Training] : FFT-based noise reduction %s' % status[use_noise_reduction]
     print '[INFO :: Model Training] : Data normalization %s' % status[use_data_normalization]
     print '[INFO :: Model Training] : Data shuffling %s' % status[use_data_shuffling]
+    print '[INFO :: Model Training] : Held-out dataset %s' % status[use_heldout_test_set]
 
 # create unique label for this run
 run_descriptor = {
@@ -62,7 +64,7 @@ run_descriptor = {
 }
 keys_order = ['nfeat','df','sps','trim','B','H','shuff','fft','norm','lr']
 model_label = '%s-%s' % (
-    strftime("%Y-%m-%d-%H:%M", gmtime()),
+    strftime("%Y-%m-%d-%H:%M", localtime()),
     '-'.join( [ '%s_%s' % (k,run_descriptor[k]) for k in keys_order ] )
 )
 
@@ -75,39 +77,45 @@ idx_to_class, class_to_idx, trace_id_to_class, train_data = load_data(
     trace_trim_secs,
     decimation_factor,
     features,
-    use_data_shuffling,
     verbose
 )
-if use_noise_reduction:     # remove noise by applying FFT (if needed)
+if use_noise_reduction:     # remove noise by applying FFT
     remove_noise( train_data, features, verbose )
 if use_data_normalization:  # apply data normalization as regularization technique
     feature_max, feature_min = normalize_dataset( train_data, verbose=verbose )
+if use_heldout_test_set:    # get an held-out dataset
+    heldout_data, train_data = create_heldout_dataset( train_data, trace_id_to_class, 0.12 ) # take 10%
+    heldout_batches = batchify( heldout_data, batch_size )
+if use_data_shuffling:      # shuffle samples in dataset
+    shuffle_data( train_data )
 train_batches = batchify( train_data, batch_size )
 
 
-# # get test data
-# _, _, test_data = load_data(
-#     data_dir,
-#     'test',
-#     seconds_per_sample,
-#     trace_trim_secs,
-#     decimation_factor,
-#     features,
-#     use_data_shuffling,
-#     verbose
-# )
-# if use_noise_reduction:     # remove noise by applying FFT (if needed)
-#     remove_noise( test_data, features, verbose )
-# if use_data_normalization:  # apply data normalization as regularization technique
-#     normalize_dataset( test_data, feature_max, feature_min, verbose )
-# test_batches = batchify( test_data, batch_size )
+
+# get test data
+_, _, _, test_data = load_data(
+    data_dir,
+    'test',
+    seconds_per_sample,
+    trace_trim_secs,
+    decimation_factor,
+    features,
+    verbose
+)
+if use_noise_reduction:     # remove noise by applying FFT
+    remove_noise( test_data, features, verbose )
+if use_data_normalization:  # apply data normalization as regularization technique
+    normalize_dataset( test_data, feature_max, feature_min, verbose )
+test_batches = batchify( test_data, batch_size )
 
 
 # print statistics about data batches
 if verbose:
     print
     print '[INFO :: Model Training] : Training data: %d batches' % len( train_batches['input'] )
-    # print '[INFO :: Model Training] : Test data: %d batches' % len( test_batches['input'] )
+    if use_heldout_test_set:
+        print '[INFO :: Model Training] : Held-out data: %d batches' % len( heldout_batches['input'] )
+    print '[INFO :: Model Training] : Test data: %d batches' % len( test_batches['input'] )
 
 
 # create the model
@@ -292,11 +300,97 @@ for epoch in range(1, max_epochs+1, 1):
         crossval_i += 1
 
     # compute per-trace accuracy at the end of each epoch
-    origin_to_prediction_distributions = {}
+    per_trace_test_data = heldout_batches if use_heldout_test_set else train_batches
+    per_trace_test_data_label = 'Held-out data' if use_heldout_test_set else 'Train data'
     # iterate over batches
-    for j in range(len(train_batches['input'])):
-        batch_input = train_batches['input'][j]
-        batch_origin = train_batches['origin'][j]
+    unique_trace_ids = set()
+    origin_to_prediction_distributions = {}
+    for j in range(len(per_trace_test_data['input'])):
+        batch_input = per_trace_test_data['input'][j]
+        batch_origin = per_trace_test_data['origin'][j]
+        # retrieve initial state for the RNN based on the current batch size
+        _, cur_batch_size, _ = batch_input.shape
+        rnn_zero_state = zero_states[ cur_batch_size ]
+        # feed the batch to the RNN and get the predictions
+        Y_pdist = session.run(
+            Y,
+            { X : batch_input, zero_state : rnn_zero_state }
+        )
+        # store probability distribution over classes for each sample in the bucket corresponding to its origin
+        for k in range(cur_batch_size):
+            origin = batch_origin[k]
+            if origin not in origin_to_prediction_distributions:
+                origin_to_prediction_distributions[origin] = []
+            origin_to_prediction_distributions[origin].append( Y_pdist[k] )
+            assert( Y_pdist[k].shape == (num_classes,) )
+            # store trace id for easy computation of accuracy later
+            unique_trace_ids.add( origin )
+    # combine probability distributions for each origin
+    origin_to_prediction_distribution = {
+        origin : np.mean( np.stack( origin_to_prediction_distributions[origin], axis=0 ), axis=0 )
+        for origin in origin_to_prediction_distributions
+    }
+    # make sure we have valid probability distributions over classes
+    for pdist in origin_to_prediction_distribution.values():
+        assert( pdist.shape == (num_classes,) )
+    # pick most likely label per trace
+    origin_to_prediction = {
+        origin : np.argmax( origin_to_prediction_distribution[origin] )
+        for origin in origin_to_prediction_distribution
+    }
+    # compare against groundtruth
+    per_trace_correct = 0
+    total_traces = len( unique_trace_ids )
+    for origin in origin_to_prediction:
+        prediction = origin_to_prediction[origin]
+        groundtruth = trace_id_to_class[origin]
+        per_trace_correct += int( prediction == groundtruth )
+    # compute per-sample evaluation accuracy
+    epoch_per_trace_accuracy = 100.*float(per_trace_correct)/float(total_traces)
+
+    # print some stats
+    epoch_train_loss = np.mean( epoch_train_losses )
+    epoch_eval_loss = np.mean( epoch_eval_losses )
+    epoch_train_accuracy = 100.*float(epoch_train_correct)/float(epoch_total_train_samples)
+    epoch_eval_accuracy = 100.*float(epoch_eval_correct)/float(epoch_total_eval_samples)
+    print 'Epoch %d :: Training loss: %.2f (%.1f%%) \t Validation loss: %.2f (%.1f%%) \t Per-Trace Accuracy (%s): %.2f%%' % (
+        epoch,
+        epoch_train_loss, epoch_train_accuracy,
+        epoch_eval_loss, epoch_eval_accuracy,
+        per_trace_test_data_label, epoch_per_trace_accuracy
+    )
+
+    # compute confusion matrix
+    num_traces_per_class = [ 0 for _ in range(num_classes) ]
+    confusion_matrix = [ [ 0 for _c in range(num_classes) ] for _r in range(num_classes) ]
+    for i in range(num_classes):
+        counter = [ 0 for _ in range(num_classes) ]
+        for trace_id in origin_to_prediction_distribution:
+            if trace_id_to_class[trace_id] != i: continue
+            num_traces_per_class[i] += 1
+            dist_cur_trace = origin_to_prediction_distribution[trace_id]
+            prediction_cur_trace = np.argmax( dist_cur_trace )
+            counter[ prediction_cur_trace ] += 1
+        confusion_matrix[i] = counter
+    # print confusion matrix
+    class_names = ['X'] + [ idx_to_class[idx] for idx in range(num_classes) ]
+    t = PrettyTable( class_names )
+    print '\nConfusion Matrix [Epoch %d]:' % epoch
+    for i in range(num_classes):
+        probs = [
+            '%d%%' % int(100.0*float(confusion_matrix[i][j])/float(num_traces_per_class[i]))
+            for j in range(num_classes)
+        ]
+        t.add_row( [ idx_to_class[i] ] + probs )
+    print t
+    print
+
+
+    # compute labels for test data
+    origin_to_prediction_distributions = {}
+    for j in range(len(test_batches['input'])):
+        batch_input = test_batches['input'][j]
+        batch_origin = test_batches['origin'][j]
         # retrieve initial state for the RNN based on the current batch size
         _, cur_batch_size, _ = batch_input.shape
         rnn_zero_state = zero_states[ cur_batch_size ]
@@ -325,52 +419,13 @@ for epoch in range(1, max_epochs+1, 1):
         origin : np.argmax( origin_to_prediction_distribution[origin] )
         for origin in origin_to_prediction_distribution
     }
-    # compare against groundtruth
-    per_trace_correct = 0
-    total_traces = len(trace_id_to_class.keys())
-    for origin in origin_to_prediction:
-        prediction = origin_to_prediction[origin]
-        groundtruth = trace_id_to_class[origin]
-        per_trace_correct += int( prediction == groundtruth )
-    # compute per-sample evaluation accuracy
-    epoch_per_trace_accuracy = 100.*float(per_trace_correct)/float(total_traces)
-
-    # print some stats
-    epoch_train_loss = np.mean( epoch_train_losses )
-    epoch_eval_loss = np.mean( epoch_eval_losses )
-    epoch_train_accuracy = 100.*float(epoch_train_correct)/float(epoch_total_train_samples)
-    epoch_eval_accuracy = 100.*float(epoch_eval_correct)/float(epoch_total_eval_samples)
-    print 'Epoch %d :: Training loss: %.2f (%.1f%%) \t Validation loss: %.2f (%.1f%%) \t Per-Trace Accuracy: %.2f%%' % (
-        epoch,
-        epoch_train_loss, epoch_train_accuracy,
-        epoch_eval_loss, epoch_eval_accuracy,
-        epoch_per_trace_accuracy
-    )
-
-    # compute confusion matrix
-    num_traces_per_class = [ 0 for _ in range(num_classes) ]
-    confusion_matrix = [ [ 0 for _c in range(num_classes) ] for _r in range(num_classes) ]
-    for i in range(num_classes):
-        counter = [ 0 for _ in range(num_classes) ]
-        for trace_id in origin_to_prediction_distribution:
-            if trace_id_to_class[trace_id] != i: continue
-            num_traces_per_class[i] += 1
-            dist_cur_trace = origin_to_prediction_distribution[trace_id]
-            prediction_cur_trace = np.argmax( dist_cur_trace )
-            counter[ prediction_cur_trace ] += 1
-        confusion_matrix[i] = counter
-    # print confusion matrix
-    class_names = ['X'] + [ idx_to_class[idx] for idx in range(num_classes) ]
-    t = PrettyTable( class_names )
-    print '\nConfusion Matrix [Epoch %d]:' % epoch
-    for i in range(num_classes):
-        probs = [
-            '%d%%' % int(100.0*float(confusion_matrix[i][j])/float(num_traces_per_class[i]))
-            for j in range(num_classes)
-        ]
-        t.add_row( [ idx_to_class[i] ] + probs )
-    print t
-    print
+    # print predicted labels for test data
+    test_set_origins = origin_to_prediction.keys()
+    sorted(test_set_origins)
+    print '=== Test set ======================='
+    for origin in test_set_origins:
+        print 'Test trace #%d = `%s`' % ( origin, idx_to_class[ origin_to_prediction[origin] ] )
+    print '====================================\n'
 
     # publish data on tensorboard
     summ = session.run(

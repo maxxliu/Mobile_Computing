@@ -2,7 +2,7 @@
 # @Date:   Monday, January 22nd 2018
 # @Email:  afdaniele@ttic.edu
 # @Last modified by:   afdaniele
-# @Last modified time: Monday, January 29th 2018
+# @Last modified time: Tuesday, January 30th 2018
 
 import os
 from os.path import isfile, join
@@ -129,7 +129,7 @@ Each txt file has the form (note that it is not a valid JSON file due to the sin
     ]
 
 '''
-def load_data( data_dir, data_type, seconds_per_sample, trace_trim_secs, decimation_factor, features, use_data_shuffling, verbose=False ):
+def load_data( data_dir, data_type, seconds_per_sample, trace_trim_secs, decimation_factor, features, verbose=False ):
     # generate classes map
     idx_to_class = { -1 : 'Unknown', 0 : 'Standing', 1 : 'Walking', 2 : 'Jumping', 3 : 'Driving' }
     class_to_idx = { 'Unknown' : -1, 'Standing' : 0, 'Walking' : 1, 'Jumping' : 2, 'Driving' : 3 }
@@ -195,20 +195,22 @@ def load_data( data_dir, data_type, seconds_per_sample, trace_trim_secs, decimat
             pbar.next()
     # make sure input, output, and origin have the same size
     assert( len(dataset['input']) == len(dataset['output']) and len(dataset['output']) == len(dataset['origin']) )
-    # shuffle data (if needed)
-    if use_data_shuffling:
-        indices = range( len(dataset['input']) )
-        random.shuffle( indices )
-        random.shuffle( indices )
-        dataset['input'] = [ dataset['input'][i] for i in indices ]
-        dataset['output'] = [ dataset['output'][i] for i in indices ]
-        dataset['origin'] = [ dataset['origin'][i] for i in indices ]
     # print some statistics (if needed)
     if verbose:
         # print statistics about the dataset loaded
         print '[INFO :: Data Loader] : Dataset size: %d samples' % len(dataset['input'])
     # return dataset
     return idx_to_class, class_to_idx, trace_id_to_class, dataset
+
+
+def shuffle_data( dataset ):
+    # shuffle data
+    indices = range( len(dataset['input']) )
+    random.shuffle( indices )
+    random.shuffle( indices )
+    dataset['input'] = [ dataset['input'][i] for i in indices ]
+    dataset['output'] = [ dataset['output'][i] for i in indices ]
+    dataset['origin'] = [ dataset['origin'][i] for i in indices ]
 
 
 '''
@@ -243,7 +245,7 @@ def remove_noise( dataset, features, verbose=False ):
             # compute mean frequency
             mean = np.mean( np.abs(w) )
             # set the threshold to double the mean
-            thr = 6 * mean
+            thr = 2 * mean
             # remove high frequency components
             cutoff_idx = np.abs(w) < thr
             w[cutoff_idx] = 0
@@ -315,6 +317,50 @@ def normalize_dataset( dataset, feature_max=None, feature_min=None, verbose=Fals
             pbar.next()
     # return features boundaries
     return ( feature_max, feature_min )
+
+
+def create_heldout_dataset( data, trace_id_to_class, heldout_ratio ):
+    num_samples = len(data['input'])
+    # compute number of distinct traces
+    traces_ids = trace_id_to_class.keys()
+    num_traces = len(traces_ids)
+    # compute number of classes
+    classes = list(set(trace_id_to_class.values()))
+    num_classes = len(classes)
+    # get size (lower bound) of the heldout dataset
+    num_heldout_traces = int( math.ceil( num_traces * heldout_ratio ) )
+    # compute number of traces per class to take (let's not be maniacally precise here)
+    num_traces_per_class = int( math.ceil( float(num_heldout_traces) / float(num_classes) ) )
+    # collect num_traces_per_class traces for each class
+    class_to_trace_ids = {
+        c : [ tid for tid in traces_ids if trace_id_to_class[tid] == c ]
+        for c in classes
+    }
+    trace_ids_per_class = {
+        c : class_to_trace_ids[c][:num_traces_per_class]
+        for c in classes
+    }
+    traces_to_take = []
+    for c in classes:
+        traces_to_take += trace_ids_per_class[c]
+    # extract sample indices for heldout and resulting training (do not use del with indices)
+    heldout_sample_indices = [ i for i in range(num_samples) if data['origin'][i] in traces_to_take ]
+    training_sample_indices = [ i for i in range(num_samples) if i not in heldout_sample_indices ]
+    # take traces out
+    heldout_data = {
+        'input' : [ data['input'][i] for i in heldout_sample_indices ],
+        'output' : [ data['output'][i] for i in heldout_sample_indices ],
+        'origin' : [ data['origin'][i] for i in heldout_sample_indices ]
+    }
+    train_data = {
+        'input' : [ data['input'][i] for i in training_sample_indices ],
+        'output' : [ data['output'][i] for i in training_sample_indices ],
+        'origin' : [ data['origin'][i] for i in training_sample_indices ]
+    }
+    # make sure things work as expected
+    assert( len(heldout_data['input']) + len(train_data['input']) == num_samples )
+    # return heldout and training data
+    return heldout_data, train_data
 
 
 '''
