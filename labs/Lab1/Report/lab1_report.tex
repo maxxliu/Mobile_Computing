@@ -147,7 +147,6 @@ from the training data and used it for testing our model and decide when to stop
 
 \section{Results}
 \vspace{-.3cm}
-\textbf{Assigned to: Noah}
 
 \t The accuracy of our recurrent neural network is very high. Having cut each trace into one-second samples, each epoch of training contained 1041 samples. After only 4 epochs of training, our training accuracy hit 100\% as well as our post-epoch testing accuracy. Of course, this varied throughout the 50-epoch training, but accuracy remained near-perfect through all epochs after 3. The inclusion of the first derivative of acceleration with respect to time raised the accuracy of our model by almost 25\%, as it allowed the RNN to access the shape of the acceleration readings. Included below in Figure 1 is a plot of per-trace accuracy over the 50 epochs, which shows the rate of cross-validation correctness for each epoch.
 
@@ -167,7 +166,6 @@ from the training data and used it for testing our model and decide when to stop
 
 \section{Conclusion}
 \vspace{-.3cm}
-\textbf{Assigned to: Noah}
 
 \t Overall, this algorithm is very promising. It only relies on the reading of a sensor that is very popular in mobile devices, the IMU. After training, it requires very low CPU and battery usage for activity identification, and can be easily run in the background on many devices. Additionally, there exists extensive implementation of tensorflow for a variety of mobile devices. So, this algorithm can be deployed easily and seamlessly to mobile devices whether on a vehicle or on a smartphone. Expansion of this model to include more realistic identification classes, such as turning, would allow one to achieve accurate activity detection for many uses concerning safety and usability.
 
