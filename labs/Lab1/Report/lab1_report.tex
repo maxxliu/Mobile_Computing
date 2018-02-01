@@ -75,12 +75,13 @@ during the training phase, the gradient that is back-propagated from the last RN
 RNN in Fig.~\ref{fig:rnn}) towards the first RNN (left-most RNN in Fig.~\ref{fig:rnn}) becomes
 really small (vanishes) before reaching the head of the chain. This problem prevents the first
 part of the network from learning. The longer is the chain, the more the network suffer
-the vanishing gradient). Since in our case we work with long sequences of IMU readings, we used
-the LSTM-RNN (Long Short-Term Memory RNN) which is specifically designed to avoid the
-vanishing gradient problem.
+the vanishing gradient). Since in our case we work with long sequences of data, we used
+the LSTM-RNN (Long Short-Term Memory RNN)~\cite{sundermeyer2012lstm} which is 
+specifically designed to cope with vanishing gradients.
 
 In order to quickly and effectively train the RNN it is necessary to first do some data processing
-to reduce noise, decrease trace sizes, and add additional features (see ~\ref{subs:postproc} for details).
+to reduce noise, decrease trace sizes, and add additional features (see ~\ref{subs:postproc} 
+for details).
 
 
 \subsection{Data post-processing}\label{subs:postproc}
@@ -151,7 +152,7 @@ After only $4$ epochs of training, our training accuracy hits $100\%$ as well as
 post-epoch testing accuracy.
 The inclusion of the first derivative of acceleration with respect to time raised the accuracy
 of our model by almost $25\%$, as it allows the RNN to access the change rate of the
-acceleration readings. Figure~\ref{fig:acc_ptpe} plots the per-trace training
+acceleration readings. Figure~\ref{fig:acc_ptpe} shows the per-trace training
 accuracy over the $50$ epochs, which shows the rate of cross-validation correctness
 for each epoch.
 
