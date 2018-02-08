@@ -20,7 +20,8 @@ def LoadData(address):
 def CreateGraph(width, squareWidth):
 
     #round the width up to a multiple of squareWidth
-    width = width + (width - (width % squareWidth)
+    width = width + (squareWidth - (width % squareWidth))
+    w = int(width / squareWidth)
 
     #graph initialized to 0s
     #graph(0,0) represents the square at which:
@@ -28,6 +29,6 @@ def CreateGraph(width, squareWidth):
     #   -top right corner is at x = squareWidth, y = squareWidth
     #first index is x-axis
     #second index is y axis
-    graph = np.zeros(width / squareWidth, width / squareWidth)
+    graph = np.zeros((w,w))
 
     return graph
