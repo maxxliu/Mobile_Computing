@@ -1,26 +1,45 @@
 import numpy as np
 import json
 
+#for a given RSS strength, car location, and graph, compute squares to increment
+def ComputeIntersections(strength, x, y, width, dimension):
 
-def LoadData(address):
+    radius = 0 #will compute later
+    intersection = False
+    intersections = []
 
-    rssJSON = []
-    for i in range(1, 20):
-        rssJSON.append(json.loads(open("../Data/rssdataset/rss-" + str(i) + ".txt").read()))
+    for i in dimension:                 #x direction
+        for j in dimension:             #y direction
+            intersection = False
 
-    addressData = []
-    for i in rssJSON:
-        for j in i:
-            if j['mac'] == address:
-                addressData.append(j)
+            xDistance = abs(x - (i * width + (width / 2)))
+            yDistance = abs(y - (j * width + (width / 2)))
 
-    return addressData
+            if xDistance > ((width / 2) + radius):
+                continue
+            if yDistance > ((width / 2) + radius):
+                continue
+
+            if xDistance <= width / 2:
+                intersection = True
+            if yDistance <= width / 2:
+                intersection = True
+
+            cornerDistance = (xDistance - (width/2))^2 + (yDistance - (width/2))^2
+            if intersection != True:
+                if cornerDistance <= radius**2:
+                    intersection = True
+
+            if intersection == True:
+                intersections.append([x, y])
+
+    return intersections
 
 
+
+#creates a graph for localization
 def CreateGraph(width, squareWidth):
 
-    #round the width up to a multiple of squareWidth
-    width = width + (squareWidth - (width % squareWidth))
     w = int(width / squareWidth)
 
     #graph initialized to 0s
@@ -32,3 +51,13 @@ def CreateGraph(width, squareWidth):
     graph = np.zeros((w,w))
 
     return graph
+
+
+#returns locations of corners of given square within graph
+#begins at bottom left corner (min x & min y), and rotates counter clockwise
+def ComputeSquareLocation(x, y, width):
+    dimensions = [[x * width, y * width],
+                  [(x + 1) * width, y * width],
+                  [(x + 1) * width, (y + 1) * width],
+                  [x * width, (y + 1) * width]]
+    return dimensions
