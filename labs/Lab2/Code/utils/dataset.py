@@ -77,3 +77,9 @@ def load_data( data_dir ):
         pbar.next()
     # return data
     return ID_to_MAC, MAC_to_ID, data
+
+
+def filter_readings_given_mac( trace_data, mac_id ):
+    useful_readings = [ trace_data[i,1] == mac_id for i in range(trace_data.shape[0]) ]
+    for r in trace_data[ useful_readings ]:
+        yield r

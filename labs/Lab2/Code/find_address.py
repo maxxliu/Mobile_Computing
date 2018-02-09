@@ -1,10 +1,17 @@
+# @Author: Andrea F. Daniele <afdaniele>
+# @Date:   Thursday, February 8th 2018
+# @Email:  afdaniele@ttic.edu
+# @Last modified by:   afdaniele
+# @Last modified time: Thursday, February 8th 2018
+
+
 import numpy as np
 import json
 import localize
 import sys
 from utils import *
 
-print "" 
+print ""
 print "Mobile Computing | Lab 2 | Localization"
 print "Andrea F. Daniele, Max X. Liu, Noah A. Hirsch"
 print ""
@@ -24,10 +31,7 @@ mac_id = MAC_to_ID[address]
 #for each data point, if it has the right MAC address, increment its intersections
 for trace_id in data:
     trace_data = data[trace_id]
-    useful_readings = [ trace_data[i,1] == mac_id for i in range(trace_data.shape[0]) ]
-
-    for r in trace_data[ useful_readings ]:
-
+    for r in filter_readings_given_mac( trace_data, mac_id ):
         intersects = localize.ComputeIntersections(r[4], r[2], r[3], graphResolution, areaWidth / graphResolution)
         for i in intersects:
             graph[i[0], i[1]] += 1
