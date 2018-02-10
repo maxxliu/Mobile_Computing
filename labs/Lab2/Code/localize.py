@@ -1,3 +1,10 @@
+# @Author: Andrea F. Daniele <afdaniele>
+# @Date:   Saturday, February 10th 2018
+# @Email:  afdaniele@ttic.edu
+# @Last modified by:   afdaniele
+# @Last modified time: Saturday, February 10th 2018
+
+
 import numpy as np
 import json
 

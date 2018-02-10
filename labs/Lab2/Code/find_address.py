@@ -1,10 +1,3 @@
-# @Author: Andrea F. Daniele <afdaniele>
-# @Date:   Thursday, February 8th 2018
-# @Email:  afdaniele@ttic.edu
-# @Last modified by:   afdaniele
-# @Last modified time: Thursday, February 8th 2018
-
-
 import numpy as np
 import json
 import localize
@@ -19,6 +12,7 @@ print "Usage: python find_address.py [mac-address]"
 
 areaWidth = 15                                                              #how wide the area of possible mac locations is
 graphResolution = 2                                                         #how wide we want graph squares to be
+graphDiagonals = (2**0.5) * graphResolution                                 #length of diagonals of squares
 areaWidth = areaWidth + (graphResolution - (areaWidth % graphResolution))   #round width up to multiple of gR
 
 #create graph and load data
@@ -31,8 +25,11 @@ mac_id = MAC_to_ID[address]
 #for each data point, if it has the right MAC address, increment its intersections
 for trace_id in data:
     trace_data = data[trace_id]
-    for r in filter_readings_given_mac( trace_data, mac_id ):
-        intersects = localize.ComputeIntersections(r[4], r[2], r[3], graphResolution, areaWidth / graphResolution)
+    useful_readings = [ trace_data[i,1] == mac_id for i in range(trace_data.shape[0]) ]
+
+    for r in trace_data[ useful_readings ]:
+
+        intersects = localize.ComputeIntersections(r[4], r[2], r[3], graphResolution, graphDiagonals, areaWidth / graphResolution)
         for i in intersects:
             graph[i[0], i[1]] += 1
 
