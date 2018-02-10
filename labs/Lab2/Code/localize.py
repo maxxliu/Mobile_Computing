@@ -7,35 +7,50 @@ def ComputeDistance(strength):
 
 
 #for a given RSS strength, car location, and graph, compute squares to increment
-def ComputeIntersections(strength, x, y, width, dimension):
+def ComputeIntersections(strength, x, y, width, diagonal, dimension):
 
-    radius = ComputeDistance(strength)
-    intersection = False
+    outerRadius = ComputeDistance(strength)
+    innerRadius = outerRadius - diagonal
+    outerIntersection = False
+    innerIntersection = False
     intersections = []
 
     for i in range(dimension):                 #x direction
         for j in range(dimension):             #y direction
-            intersection = False
+            outerIntersection = False
+            innerIntersection = False
 
             xDistance = abs(x - (i * width + (width / 2)))
             yDistance = abs(y - (j * width + (width / 2)))
 
-            if xDistance > ((width / 2) + radius):
+            if xDistance > ((width / 2) + outerRadius):
                 continue
-            if yDistance > ((width / 2) + radius):
+            if yDistance > ((width / 2) + outerRadius):
                 continue
 
             if xDistance <= width / 2:
-                intersection = True
+                outerIntersection = True
+                innerIntersection = True
             if yDistance <= width / 2:
-                intersection = True
+                outerIntersection = True
+                innerIntersection = True
 
             cornerDistance = (xDistance - (width/2))**2 + (yDistance - (width/2))**2
-            if intersection != True:
-                if cornerDistance <= radius**2:
-                    intersection = True
+            if outerIntersection != True:
+                if cornerDistance <= outerRadius**2:
+                    outerIntersection = True
 
-            if intersection == True:
+
+            if xDistance > ((width / 2) + innerRadius):
+                innerIntersection = False
+            if yDistance > ((width / 2) + innerRadius):
+                innerIntersection = False
+
+            if innerIntersection != True:
+                if cornerDistance <= innerRadius**2:
+                    innerIntersection = True
+
+            if outerIntersection and not innerIntersection:
                 intersections.append([x, y])
 
     return intersections
