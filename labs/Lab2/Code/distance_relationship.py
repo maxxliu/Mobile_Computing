@@ -79,6 +79,17 @@ def calculate_buckets(RSS_buckets, b_size):
         # plt.close()
         largest = np.argmax(n)
         dist = (bins[largest] + bins[largest + 1]) / 2
+
+        # what if i did median instead
+        # i tried this and it looks very noisy
+        # i = len(RSS_buckets[rss]) // 2
+        # dist = RSS_buckets[rss][i]
+
+        # ok what if i did mean
+        # the curve is almost linear but looks pretty smooth
+        # could definitely try this and see if it gets better results
+        # dist = np.mean(RSS_buckets[rss])
+
         distance.append(dist)
 
     return rss_values, distance
@@ -171,6 +182,9 @@ def run_moving_avg_distance_relationship(bsize=20, wsize=4):
     plt.xlabel('RSS')
     plt.ylabel('Distance')
     plt.show()
+
+    # return the best fit curve
+    return p2
 
 
 # # Create heatmap
