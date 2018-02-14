@@ -6,7 +6,6 @@
 
 
 from utils import *
-from visualization import *
 import localization
 import numpy as np
 import sys
@@ -24,9 +23,10 @@ if len(sys.argv) != 3:
     print "Andrea F. Daniele, Max X. Liu, Noah A. Hirsch"
     print ""
     print "Usage: python main.py [mac-address] [resolution-in-meters]"
+    exit()
 
 mac_to_localize = sys.argv[1]
-cell_width = sys.argv[2]
+cell_width = float(sys.argv[2])
 
 min_x = -30
 max_x = 30
@@ -52,6 +52,7 @@ ID_to_MAC, MAC_to_ID, data = load_data('../Data/rssdataset')
 graph = localization.create_graph( (gridmap_x_width,gridmap_y_width), cell_width )
 
 if gui:
+    from visualization import *
     v = Viewer( min_x, max_x, min_y, max_y, grid_res=cell_width )
     gridmap = v.create_grid( graph, min_x, max_x, min_y, max_y )
     path = v.create_path()
