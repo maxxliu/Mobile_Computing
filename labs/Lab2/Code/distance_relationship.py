@@ -2,7 +2,7 @@
 # @Date:   Tuesday, February 13th 2018
 # @Email:  afdaniele@ttic.edu
 # @Last modified by:   afdaniele
-# @Last modified time: Tuesday, February 13th 2018
+# @Last modified time: Wednesday, February 14th 2018
 
 
 import json
@@ -10,6 +10,7 @@ import math
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 # These are the two devices that we know the location of:
 # 8c:85:90:16:0a:a4
@@ -181,13 +182,21 @@ def run_moving_avg_distance_relationship(bsize=20, wsize=4):
     z = np.polyfit(rss_values, dist, 2)
     p2 = np.poly1d(z)
 
-    xp = np.linspace(30, 70, 100)
+    xp = np.linspace(30, 70, 200)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
 
     # plot rss vs distance
-    plt.close()
-    plt.plot(rss_values, dist, xp, p2(xp), '-')
-    plt.xlabel('RSS')
-    plt.ylabel('Distance')
+    # plt.close()
+    ax.plot(rss_values, dist, xp, p2(xp), '-')
+    ax.set_xlabel('RSS (dBm)')
+    ax.set_ylabel('Distance (meters)')
+    plt.xlim(39, 64)
+    plt.ylim(0, 12)
+
+    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter("-%d"))
+
     plt.show()
 
     # return the best fit curve
