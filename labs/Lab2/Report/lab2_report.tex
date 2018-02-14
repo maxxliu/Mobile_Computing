@@ -42,17 +42,17 @@ The goal of this lab is to identify the location of a Wi-Fi device by analyzing 
 (RSS) data recorded by a Wi-Fi receiver mounted on a moving car. The main challenge in this lab is
 mitigating RSS noise. Another challenge is that while collecting data, our car would often turn on its 
 own, which would make it difficult to determine the car's position from its starting point, stopping point, 
-and speed. We don't address this last limitation in this lab.
+and speed. We do not address this last limitation in this lab.
 
 
 \section{Proposed Approach}
 \vspace{-.3cm}
 \begin{wrapfigure}{r}{0.4\textwidth}
     \centering
-    \vspace{-20pt}
+    \vspace{-10pt}
     \includegraphics[width=\linewidth]{figures/moving_car.pdf}
     \caption{Heat map resulting from the intersection of multiple RSS readings \label{fig:moving_car}}
-    \vspace{-20pt}
+%    \vspace{-6pt}
 \end{wrapfigure}
 For each RSS reading, we estimate the distance from the car to the Wi-Fi device and thus create a 
 circular locus of possible locations around the car. The relationship between RSS and distance
@@ -61,35 +61,48 @@ data for which the distance from the transmitter is known (shown in Fig.~\ref{fi
 
 As we collect multiple RSS readings from the moving car, we can create multiple loci whose 
 intersection locates the position of the Wi-Fi device.
+By using the RSS and distance relationship we can draw a radius in which we know
+that the device location lies somewhere along that radius. In an ideal situation,
+we would only need $3$ RSS readings from $3$ different locations to localize a device.
+However, because of how noisy our data is, it is very hard to pinpoint the exact
+location of a device by looking for a single intersection from the RSS values.
+In order to get around this issue we propose using a simple particle filter to
+find regions that would most likely contain the device.
+We can begin by overlaying a grid over the space that the car has traveled and where
+the device could potentially be. The granularity of this grid can be altered to have
+each area represent centimeters or even meters. 
 Fig.~\ref{fig:moving_car} shows how we intersect multiple RSS readings relative to the same device
-on a 2D discretized representation of the environment. The blue heat-map shows the current 
-probability distribution over locations for a specific WiFi device. The red circle has its center on the
-car's position and radius corresponding to the estimated distance based on the current RSS reading. 
-It is worth noting that the center of the darkest cell in the heat-map of Fig.~\ref{fig:moving_car}
-(cell with highest probability) has coordinates $(7.5, 10.5)$, which corresponds to the location 
-predicted by our model for the device 8c:85:90:16:0a:a4 (shown later in Table~\ref{tab:results}).
+on the 2D discretized representation of the environment. The blue heat-map shows the current 
+probability distribution over locations for a specific WiFi device.
+The red circle indicates the current measurement, it is centered on the
+car's position, and its radius corresponds to the estimated distance from the transmitter.
 
-We must also overcome the RSS noise 
-due to variable environments and signal reflection.
-To resolve this, our method chooses the single location in the workspace with the most locus 
-intersections. 
 \begin{wrapfigure}{r}{0.4\textwidth}
     \centering
-    \vspace{-4pt}
+    \vspace{-12pt}
     \includegraphics[width=\linewidth]{figures/grid_resolution_study.pdf}
-    \caption{Localization error for the devices with known location \label{fig:grid_resolution_study}}
-    \vspace{-10pt}
+    \caption{Localization error for different grid resolutions \label{fig:grid_resolution_study}}
+    \vspace{-32pt}
 \end{wrapfigure}
-Since we are collecting hundreds of RSS datapoints each second, the truthful 
-datapoints will converge on the correct location, while the noisy datapoints will not converge on 
-a single location as much to outweigh that correct answer. We believe this to be an appropriate 
-solution, and it will be shown later that it can detect the location of two test Wi-Fi devices of 
-which we know the location with a relatively small error.
+
 
 We discretized the environment using a grid with resolution of $1.0$ meter. We based this decision 
 on results from empirical experiments run on the two WiFi devices for which the ground-truth location 
 is known. Fig.~\ref{fig:grid_resolution_study} shows the localization error for the both devices and 
 for four different grid resolutions.
+
+At the end of this process, we look at the grid squares that had the most
+intersections and estimate that to be where the device is located.
+Since we are collecting hundreds of RSS readings each second, the truthful 
+datapoints will converge to the correct location, while the noisy datapoints will not converge to 
+a single location as much to outweigh that correct answer. 
+It is worth noting that the center of the darkest cell in the heat-map of Fig.~\ref{fig:moving_car}
+(cell with highest probability) has coordinates $(7.5, 10.5)$, which corresponds to the location 
+predicted by our model for the device 8c:85:90:16:0a:a4 (shown later in Table~\ref{tab:results}).
+We believe this to be an appropriate 
+solution, and it will be shown later that it can detect the location of two test Wi-Fi devices of 
+which we know the location with a relatively small error.
+
 
 
 
@@ -105,7 +118,7 @@ for four different grid resolutions.
 \section{Results}
 \vspace{-.3cm}
 We tested our approach on two WiFi camera for which we know the true location. Our
-model predicted the location of the two cameras with $3.77$ and $2.37$ meters error.
+model predicted the location of the two cameras with $3.77$ and $2.37$ meters error respectively.
 Table~\ref{tab:results} shows the predicted location along with the prediction error for the
 cameras for which the true location is known and the predicted locations for the hidden cameras.
 Fig.~\ref{fig:pdists_hidden_cameras} shows the final probability distributions over locations for the
@@ -113,7 +126,7 @@ devices for which the ground-truth location is unknown.
 
 \begin{table}[h]
 \centering
-\begin{tabular}{ |c|c|c|c| } 
+\begin{tabular}{ |c|c|c|c| }
  \hline
  MAC & Predicted location (meters) & True location (meters) & Error (meters) \\ 
  \hline
