@@ -31,11 +31,13 @@
 
 \section{Task}
 \vspace{-.3cm}
-//TODO
+The goal of this lab is to identify the location of a Wi-Fi device by analyzing Received Signal Strength (RSS) data recorded by a Wi-Fi receiver mounted on a moving car. For each RSS reading, we can estimate the distance from the car to the Wi-Fi device and thus create a circular locus of possible locations around the car. As we collect multiple RSS readings from the moving car, we can create multiple loci whose intersection locates the position of the Wi-Fi device. We must also overcome the RSS noise due to variable environments and signal reflection.
 
 \section{Challenges}
 \vspace{-.3cm}
-//TODO
+The main challenge in this lab, as stated above, is mitigating RSS noise. To resolve this, our method chooses the single location in the workspace with the most locus intersections. Since we are collecting hundreds of RSS datapoints each second, the truthful datapoints will converge on the correct location, while the noisy datapoints will not converge on a single location as much to outweigh that correct answer. We believe this to be an appropriate solution, and it works for the test Wi-Fi devices of which we know the location.
+
+Another challenge is that our car would often turn on its own, which would make it difficult to determine the car's position from its starting point, stopping point, and speed. This position is required to map the RSS locus to the workspace. Because of this, we were simply given the position of the car at each RSS reading, making this RSS mapping clear.
 
 \section{Proposed Approach}
 \vspace{-.3cm}
