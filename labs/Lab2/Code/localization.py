@@ -2,7 +2,7 @@
 # @Date:   Saturday, February 10th 2018
 # @Email:  afdaniele@ttic.edu
 # @Last modified by:   afdaniele
-# @Last modified time: Sunday, February 11th 2018
+# @Last modified time: Tuesday, February 13th 2018
 
 
 import numpy as np
@@ -10,7 +10,11 @@ import json
 import math
 
 def compute_distance(rss):
-    return -rss * 0.05
+    # The relationship between RSS at the receiver and distance from the AP is approximated
+    # by a 2nd order polynomial function. The coefficients are computed by fitting the poly
+    # to the given data. See `distance_relationship.py` for more information.
+    poly2coeffs = [ 0.00791225165, 0.479943436, 8.96979914 ]
+    return poly2coeffs[0] * rss**2 + poly2coeffs[1] * rss + poly2coeffs[2]
 
 
 # given car location, RSS measurement, and cell width, returns the list of cells (i.e., list
@@ -21,6 +25,8 @@ def compute_intersections(car_x, car_y, rss, cell_width, verbose=False):
     car_location = np.asarray([car_x, car_y])
     # convert RSS into distance
     radius = float( compute_distance(rss) )
+    if verbose:
+        print 'rss: %.2f, distance: %.2f' % ( rss, radius )
     # for efficiency, we don't need to look at the entire gridmap, but only at the smallest set of cells
     # containing a circle of radius `radius` (min_y and max_y are the same since the cells are squared)
     min_i = int( math.floor( (car_x - radius) / cell_width ) )

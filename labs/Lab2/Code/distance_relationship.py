@@ -1,3 +1,10 @@
+# @Author: Andrea F. Daniele <afdaniele>
+# @Date:   Tuesday, February 13th 2018
+# @Email:  afdaniele@ttic.edu
+# @Last modified by:   afdaniele
+# @Last modified time: Tuesday, February 13th 2018
+
+
 import json
 import math
 import os
@@ -186,6 +193,7 @@ def run_moving_avg_distance_relationship(bsize=20, wsize=4):
     # return the best fit curve
     return p2
 
+run_moving_avg_distance_relationship()
 
 # # Create heatmap
 # heatmap, xedges, yedges = np.histogram2d(RSS, DISTANCE, bins=(100,100))

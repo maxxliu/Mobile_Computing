@@ -2,14 +2,14 @@
 # @Date:   Thursday, February 8th 2018
 # @Email:  afdaniele@ttic.edu
 # @Last modified by:   afdaniele
-# @Last modified time: Sunday, February 11th 2018
+# @Last modified time: Tuesday, February 13th 2018
 
 
 from utils import *
 from visualization import *
 import localization
 import numpy as np
-
+import sys
 
 macs = {
     "8c:85:90:16:0a:a4" : (6.8, 6.8),
@@ -18,13 +18,21 @@ macs = {
     "f8:cf:c5:97:e0:9e" : None
 }
 
-mac_to_localize = "ac:9e:17:7d:31:e8"
+if len(sys.argv) != 3:
+    print ""
+    print "Mobile Computing | Lab 2 | Localization"
+    print "Andrea F. Daniele, Max X. Liu, Noah A. Hirsch"
+    print ""
+    print "Usage: python main.py [mac-address] [resolution-in-meters]"
 
-min_x = -6
-max_x = 12
-min_y = -2
-max_y = 12
-cell_width = .25            # in meters
+mac_to_localize = sys.argv[1]
+cell_width = sys.argv[2]
+
+min_x = -30
+max_x = 30
+min_y = -10
+max_y = 40
+gui = False                 # open a window showing the map in real-time
 points_per_frame = 100      # update the windows once every points_per_frame points
 
 # make sure that the gridmap can be fully discretized with the given cell_width
@@ -36,33 +44,40 @@ max_y = max_y - max_y % cell_width
 gridmap_x_width = max_x - min_x
 gridmap_y_width = max_y - min_y
 
-gridmap_i0 = int( -min_x / cell_width )
-gridmap_j0 = int( -min_y / cell_width )
+gridmap_i0 = int( abs(min_x) / cell_width )
+gridmap_j0 = int( abs(min_y) / cell_width )
 
 ID_to_MAC, MAC_to_ID, data = load_data('../Data/rssdataset')
 
 graph = localization.create_graph( (gridmap_x_width,gridmap_y_width), cell_width )
 
-v = Viewer( min_x, max_x, min_y, max_y, grid_res=cell_width )
+if gui:
+    v = Viewer( min_x, max_x, min_y, max_y, grid_res=cell_width )
+    gridmap = v.create_grid( graph, min_x, max_x, min_y, max_y )
+    path = v.create_path()
 
-gridmap = v.create_grid( graph, min_x, max_x, min_y, max_y )
-
+# compute number of valid readings
+num_valid_readings = 0
 for trace_id in data:
     trace_data = data[trace_id]
-    path = v.create_path()
-    current_measurement = v.create_circle()
+    for i in range(trace_data.shape[0]):
+        datapoint = trace_data[i]
+        if datapoint[1] != MAC_to_ID[mac_to_localize]: continue
+        num_valid_readings += 1
+
+print 'Analyzing data: ',
+pbar = ProgressBar( num_valid_readings )
+for trace_id in data:
+    trace_data = data[trace_id]
+    if gui: current_measurement = v.create_circle()
     for i in range(trace_data.shape[0]):
         datapoint = trace_data[i]
         if datapoint[1] != MAC_to_ID[mac_to_localize]: continue
 
-        v.increment_path( path, trace_data, i )
-
         car_x = datapoint[2]
         car_y = datapoint[3]
         rss = datapoint[4]
-        predicted_distance = localization.compute_distance(rss) # TODO: update
-
-        v.move_circle( current_measurement, car_x, car_y, predicted_distance )
+        predicted_distance = localization.compute_distance(rss)
 
         intersections = localization.compute_intersections(car_x, car_y, rss, cell_width)
 
@@ -70,14 +85,20 @@ for trace_id in data:
             cell_pos = ( gridmap_j0 + c[1], gridmap_i0 + c[0] )
             graph[cell_pos] += 1
 
-        v.update_gridmap( gridmap, graph )
+        # update the viewer
+        if gui:
+            v.increment_path( path, trace_data, i )
+            v.move_circle( current_measurement, car_x, car_y, predicted_distance )
+            v.update_gridmap( gridmap, graph )
+            # update window if needed
+            if i % points_per_frame == 0:
+                v.update()
+        # update progress bar
+        pbar.next()
 
-        if i % points_per_frame == 0:
-            v.update()
-
-target_ji_location = np.unravel_index(np.argmax(graph), graph.shape)
+target_ji_location = np.unravel_index(np.argmax(graph), graph.shape) - np.asarray([gridmap_j0, gridmap_i0])
 target_ij_location = target_ji_location[::-1]
-target_xy_location = np.asarray(target_ij_location) * cell_width
+target_xy_location = np.asarray(target_ij_location) * cell_width + cell_width / 2.0
 print 'Target device "%s" located at i,j: %r,  x,y: %r' % (
     mac_to_localize,
     target_ij_location,
@@ -89,3 +110,7 @@ if macs[mac_to_localize] is not None:
     gtruth = np.asarray( macs[mac_to_localize] )
     prediction_error = np.linalg.norm( gtruth-target_xy_location )
     print "Prediction error: %.2f meters" % prediction_error
+
+# store gridmap for further analysis
+gridmap_file = 'gridmap-%s' % mac_to_localize.replace(':', '_')
+np.save(gridmap_file, graph)
