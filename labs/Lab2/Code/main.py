@@ -2,7 +2,7 @@
 # @Date:   Thursday, February 8th 2018
 # @Email:  afdaniele@ttic.edu
 # @Last modified by:   afdaniele
-# @Last modified time: Tuesday, February 13th 2018
+# @Last modified time: Wednesday, February 14th 2018
 
 
 from utils import *
@@ -113,5 +113,5 @@ if macs[mac_to_localize] is not None:
     print "Prediction error: %.2f meters" % prediction_error
 
 # store gridmap for further analysis
-gridmap_file = 'gridmap-%s' % mac_to_localize.replace(':', '_')
+gridmap_file = 'gridmap-%.2f-%s' % ( cell_width, mac_to_localize.replace(':', '_') )
 np.save(gridmap_file, graph)
