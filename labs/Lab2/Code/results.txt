@@ -1,0 +1,42 @@
+@Author: Andrea F. Daniele <afdaniele>
+@Date:   Tuesday, February 13th 2018
+@Email:  afdaniele@ttic.edu
+@Last modified by:   afdaniele
+@Last modified time: Wednesday, February 14th 2018
+
+
+
+== Resolution: 0.2 meters
+
+Target device "8c:85:90:16:0a:a4" located at i,j: array([17, -3]),  x,y: array([ 3.5, -0.5])
+Prediction error: 8.01 meters
+
+Target device "ac:9e:17:7d:31:e8" located at i,j: array([ 8, 50]),  x,y: array([ 1.7, 10.1])
+Prediction error: 2.65 meters
+
+
+== Resolution: 0.5 meters
+
+Target device "8c:85:90:16:0a:a4" located at i,j: array([14, 21]),  x,y: array([ 7.25, 10.75])
+Prediction error: 3.98 meters
+
+Target device "ac:9e:17:7d:31:e8" located at i,j: array([ 3, 19]),  x,y: array([1.75, 9.75])
+Prediction error: 2.64 meters
+
+
+== Resolution: 1.0 meters    ==> [[ *** BEST *** ]] <==
+
+Target device "8c:85:90:16:0a:a4" located at i,j: array([ 7, 10]),  x,y: array([ 7.5, 10.5])
+Prediction error: 3.77 meters
+
+Target device "ac:9e:17:7d:31:e8" located at i,j: array([1, 9]),  x,y: array([1.5, 9.5])
+Prediction error: 2.37 meters
+
+
+== Resolution: 2.0 meters
+
+Target device "8c:85:90:16:0a:a4" located at i,j: array([3, 5]),  x,y: array([ 7., 11.])
+Prediction error: 4.20 meters
+
+Target device "ac:9e:17:7d:31:e8" located at i,j: array([1, 5]),  x,y: array([ 3., 11.])
+Prediction error: 4.17 meters

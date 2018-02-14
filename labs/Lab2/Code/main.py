@@ -29,10 +29,10 @@ mac_to_localize = sys.argv[1]
 cell_width = float(sys.argv[2])
 
 min_x = -30
-max_x = 30
+max_x = 30  # 40 for f8:cf:c5:97:e0:9e only, others are fine with 30
 min_y = -10
 max_y = 40
-gui = False                 # open a window showing the map in real-time
+gui = True                 # open a window showing the map in real-time
 points_per_frame = 100      # update the windows once every points_per_frame points
 
 # make sure that the gridmap can be fully discretized with the given cell_width
@@ -55,7 +55,7 @@ if gui:
     from visualization import *
     v = Viewer( min_x, max_x, min_y, max_y, grid_res=cell_width )
     gridmap = v.create_grid( graph, min_x, max_x, min_y, max_y )
-    path = v.create_path()
+    current_measurement = v.create_circle()
 
 # compute number of valid readings
 num_valid_readings = 0
@@ -70,7 +70,7 @@ print 'Analyzing data: ',
 pbar = ProgressBar( num_valid_readings )
 for trace_id in data:
     trace_data = data[trace_id]
-    if gui: current_measurement = v.create_circle()
+    if gui: path = v.create_path()
     for i in range(trace_data.shape[0]):
         datapoint = trace_data[i]
         if datapoint[1] != MAC_to_ID[mac_to_localize]: continue
