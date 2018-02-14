@@ -186,6 +186,7 @@ def run_moving_avg_distance_relationship(bsize=20, wsize=4):
     # plot rss vs distance
     plt.close()
     plt.plot(rss_values, dist, xp, p2(xp), '-')
+    plt.title('RSS vs. Distance')
     plt.xlabel('RSS')
     plt.ylabel('Distance')
     plt.show()
