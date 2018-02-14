@@ -1,0 +1,24 @@
+Data Challenges
+
+Using the 19 RSS trace files given to us, we were able to extract
+the RSS values from known devices and calculate the absolute distance to
+a known location. The challenge is that this data is extremely noisy, with
+almost all of the RSS values having a possible distance ranging from 2 meters
+to 10 meters. This could be due to multi-path effects that alter the trajectory
+of the signals. In order to properly fit a curve over our data to predict
+distance based on RSS values, we need to reduce to noise in our data and find
+data points that are an accurate representation of the RSS versus distance
+relationship.
+
+Data Processing
+
+In order to extract a RSS versus distance relationship from our traces, we begin
+by calculating the known distances for the RSS values for which we know where
+the position of the device is. Taking this data, we then take the moving
+average of the RSS and distance values. This is to reduce the amount of noise
+that we see in the data. We then take each of the RSS values and bucket their
+distance values with a granularity of half a meter, this will allow us to ignore
+outliers that are incorrect and focus in on only the data points that accurately
+represent the distance relationship. Finally we can fit a polynomial curve
+over the data points to help map distance when given only RSS for the traces
+where we do not know the correct position.
