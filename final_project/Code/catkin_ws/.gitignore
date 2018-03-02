@@ -1,0 +1,5 @@
+build
+devel
+roscore-*.pid
+rospack_cache_*
+log

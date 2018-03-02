@@ -1,0 +1,136 @@
+<launch>
+ 	<arg name="world_frame" default="town" />
+    <arg name="camera_frame" default="camera_frame" />
+    <arg name="camera_name" default="foscam_r2" doc="namespace of the ROS camera"/>
+    <arg name="multiple_satellites" default="true" doc="whether to use different (fake) GPS satellites (processes)"/>
+    <arg name="crop_roi" default="true" doc="whether to use only the duckietown ROI (region-of-interest)"/>
+
+    <!-- Image rescaling parameters -->
+    <arg name="scale_factor" value="0.6" doc="scale factor to apply to the camera to improve performances"/>
+
+    <!-- Town ROI extraction parameters (values depends on `scale_factor`) -->
+    <arg name="scaled_ROI_x" value="230" doc="x-coordinate of the pixel on the upper-left corner of the ROI (already scaled)"/>
+    <arg name="scaled_ROI_y" value="0" doc="y-coordinate of the pixel on the upper-left corner of the ROI (already scaled)"/>
+    <arg name="scaled_ROI_width" value="780" doc="width of the viewport of the ROI (already scaled)"/>
+    <arg name="scaled_ROI_height" value="648" doc="height of the viewport of the ROI (already scaled)"/>
+
+    <arg name="image_proc_manager_name" value="image_proc_nodelet_manager" />
+
+    <!-- Camera -->
+ 	<include file="$(find rtsp_ros_driver)/launch/rtsp_camera.launch">
+        <arg name="camera_name" value="$(arg camera_name)" />
+        <arg name="camera_frame" value="$(arg camera_name)" />
+        <arg name="hostname" value="192.168.1.2" />
+        <arg name="username" value="duckietown-visitor" />
+        <arg name="password" value="duckiet0wn" />
+        <arg name="port" value="88" />
+        <arg name="stream" value="videoMain" />
+ 	</include>
+
+    <!-- Rectification -->
+    <group ns="$(arg camera_name)">
+        <node pkg="image_proc" type="image_proc" name="image_proc_node" output="screen" />
+    </group>
+
+    <!-- Bird-Eye rescale -->
+    <group ns="/duckietown">
+
+        <arg name="respawn" value="false" />
+        <arg if="$(arg respawn)" name="bond" value="" />
+        <arg unless="$(arg respawn)" name="bond" value="--no-bond" />
+
+        <node pkg="nodelet" type="nodelet" args="manager __name:=$(arg image_proc_manager_name)" name="image_proc_nodelet_manager" />
+
+        <node pkg="nodelet" type="nodelet" args="load image_proc/resize $(arg image_proc_manager_name) $(arg bond)" name="birdeye_camera_scale" respawn="$(arg respawn)">
+            <param name="scale_width" type="double" value="$(arg scale_factor)" />
+            <param name="scale_height" type="double" value="$(arg scale_factor)" />
+            <!-- remap input topics -->
+            <remap from="in_image" to="/$(arg camera_name)/image_rect_color" />
+            <remap from="camera_info" to="/$(arg camera_name)/camera_info" />
+            <!-- remap output topics -->
+            <remap from="~/out_image" to="/duckietown/birdeye_camera/scaled/image_rect"/>
+            <remap from="~/camera_info" to="/duckietown/birdeye_camera/scaled/camera_info"/>
+        </node>
+
+
+        <!-- Duckietown ROI -->
+        <node if="$(arg crop_roi)" pkg="nodelet" type="nodelet" args="load image_proc/crop_decimate $(arg image_proc_manager_name) $(arg bond)" name="birdeye_camera_crop" respawn="$(arg respawn)">
+            <param name="x_offset" type="int" value="$(arg scaled_ROI_x)" />
+            <param name="y_offset" type="int" value="$(arg scaled_ROI_y)" />
+            <param name="width" type="int" value="$(arg scaled_ROI_width)" />
+            <param name="height" type="int" value="$(arg scaled_ROI_height)" />
+            <!-- remap input topics -->
+            <remap from="camera/image_raw" to="/duckietown/birdeye_camera/scaled/image_rect"/>
+            <remap from="camera/camera_info" to="/duckietown/birdeye_camera/scaled/camera_info"/>
+            <!-- remap output topics -->
+            <remap from="camera_out/image_raw" to="/duckietown/birdeye_camera/scaled/town/image_rect"/>
+            <remap from="camera_out/camera_info" to="/duckietown/birdeye_camera/scaled/town/camera_info"/>
+        </node>
+    </group>
+
+
+    <!-- #### From this point on use only:
+        /duckietown/birdeye_camera/scaled/town/image_rect
+        /duckietown/birdeye_camera/scaled/town/camera_info
+    -->
+
+ 	<!-- AprilTags Detections -->
+    <group if="$(arg multiple_satellites)">
+        <!-- skip duckietown ROI (if disabled) -->
+        <remap unless="$(arg crop_roi)" from="/duckietown/birdeye_camera/scaled/town/image_rect" to="/duckietown/birdeye_camera/scaled/image_rect" />
+        <remap unless="$(arg crop_roi)" from="/duckietown/birdeye_camera/scaled/town/camera_info" to="/duckietown/birdeye_camera/scaled/camera_info" />
+        <!-- remap input to `apriltag_detector_node` -->
+        <remap from="image_rect" to="/duckietown/birdeye_camera/scaled/town/image_rect" />
+        <group ns="gps_satellite_nw">
+            <include file="$(find apriltags_ros)/launch/apriltag_detector_node.launch">
+                <arg name="region" value="north-west" />
+                <arg name="viewport_offset_x" value="$(arg scaled_ROI_x)" />
+                <arg name="viewport_offset_y" value="$(arg scaled_ROI_y)" />
+            </include>
+        </group>
+        <group ns="gps_satellite_sw">
+            <include file="$(find apriltags_ros)/launch/apriltag_detector_node.launch">
+                <arg name="region" value="south-west" />
+                <arg name="viewport_offset_x" value="$(arg scaled_ROI_x)" />
+                <arg name="viewport_offset_y" value="$(arg scaled_ROI_y)" />
+            </include>
+        </group>
+        <group ns="gps_satellite_se">
+            <include file="$(find apriltags_ros)/launch/apriltag_detector_node.launch">
+                <arg name="region" value="south-east" />
+                <arg name="viewport_offset_x" value="$(arg scaled_ROI_x)" />
+                <arg name="viewport_offset_y" value="$(arg scaled_ROI_y)" />
+            </include>
+        </group>
+        <group ns="gps_satellite_ne">
+            <include file="$(find apriltags_ros)/launch/apriltag_detector_node.launch">
+                <arg name="region" value="north-east" />
+                <arg name="viewport_offset_x" value="$(arg scaled_ROI_x)" />
+                <arg name="viewport_offset_y" value="$(arg scaled_ROI_y)" />
+            </include>
+        </group>
+    </group>
+
+    <group unless="$(arg multiple_satellites)">
+        <!-- skip duckietown ROI (if disabled) -->
+        <remap unless="$(arg crop_roi)" from="/duckietown/birdeye_camera/scaled/town/image_rect" to="/duckietown/birdeye_camera/scaled/image_rect" />
+        <remap unless="$(arg crop_roi)" from="/duckietown/birdeye_camera/scaled/town/camera_info" to="/duckietown/birdeye_camera/scaled/camera_info" />
+        <!-- remap input to `apriltag_detector_node` -->
+        <remap from="image_rect" to="/duckietown/birdeye_camera/scaled/town/image_rect" />
+        <group ns="gps_satellite">
+            <include file="$(find apriltags_ros)/launch/apriltag_detector_node.launch">
+                <arg name="viewport_offset_x" value="$(arg scaled_ROI_x)" />
+                <arg name="viewport_offset_y" value="$(arg scaled_ROI_y)" />
+            </include>
+        </group>
+    </group>
+
+
+    <!-- Export frames -->
+    <node pkg="tf" type="static_transform_publisher" name="bird_eye_camera_tf_broadcaster" output="screen" args="-1.63 -1.58 3.14 0 0 0 $(arg world_frame) $(arg camera_frame) 100" />
+
+
+ 	<!-- Postprocessing node -->
+
+
+</launch>

@@ -1,0 +1,23 @@
+<launch>
+
+    <arg name="pkg_name" value="apriltags_ros"/>
+    <arg name="node_name" default="apriltag_detector_node"/>
+    <arg name="param_file_name" default="default" />
+
+    <!-- region can be ['all', 'north-east', 'north-west', 'south-east', 'south-west'] -->
+    <arg name="region" default="all" />
+    <!-- region_overlap is the normalized amount of overlap between regions; 0 = no overlap, 1 = full overlap -->
+    <arg name="region_overlap" default="0.05" />
+
+    <arg name="viewport_offset_x" default="0" />
+    <arg name="viewport_offset_y" default="0" />
+
+    <node name="$(arg node_name)" pkg="$(arg pkg_name)" type="$(arg node_name)" output="screen">
+        <rosparam param="tag_descriptions" command="load" file="$(find apriltags_ros)/../signs_and_tags/tag_sizes_200-220.yaml"/>
+        <param name="region" value="$(arg region)" type="str" />
+        <param name="region_overlap" value="$(arg region_overlap)" type="double" />
+        <param name="viewport_offset_x" value="$(arg viewport_offset_x)" />
+        <param name="viewport_offset_y" value="$(arg viewport_offset_y)" />
+    </node>
+
+</launch>

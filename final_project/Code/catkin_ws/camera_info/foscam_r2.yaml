@@ -1,0 +1,16 @@
+!!python/unicode 'camera_matrix':
+  !!python/unicode 'data': !!python/tuple [1155.2165471697992, 0.0, 939.8556731988851,
+    0.0, 1155.9627032431724, 564.8978221088769, 0.0, 0.0, 1.0]
+!!python/unicode 'camera_name': foscam_r2
+!!python/unicode 'distortion_coefficients':
+  !!python/unicode 'data': !!python/tuple [0.005210403001656743, -0.01822729739217798,
+    0.007779940730617406, -0.010133871209571736, 0.0]
+!!python/unicode 'distortion_model': plumb_bob
+!!python/unicode 'image_height': 1080
+!!python/unicode 'image_width': 1920
+!!python/unicode 'projection_matrix':
+  !!python/unicode 'data': !!python/tuple [1149.33544921875, 0.0, 911.9600764332572,
+    0.0, 0.0, 1166.733642578125, 574.0416608472224, 0.0, 0.0, 0.0, 1.0, 0.0]
+!!python/unicode 'rectification_matrix':
+  !!python/unicode 'data': !!python/tuple [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+    1.0]
