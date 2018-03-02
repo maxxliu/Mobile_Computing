@@ -1,0 +1,4 @@
+[submodule "final_project/Code/catkin_ws/src/rtsp_ros_driver"]
+	path = final_project/Code/catkin_ws/src/rtsp_ros_driver
+	url = https://github.com/afdaniele/rtsp_ros_driver
+	branch = mcomp-devel
