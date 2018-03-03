@@ -1,0 +1,115 @@
+#!/usr/bin/python2
+
+import lcm
+import rospy
+import time
+from threading import Thread
+from apriltags_ros.msg import AprilTagDetectionArray
+from lcmtypes.mcomp_msgs import vgps_location_msg
+
+from tf import transformations, TransformListener
+
+
+last_locations = {}
+locations_broadcast_hz = 10
+locations_lcm_channel = 'VISUAL_GPS'
+world_frame = ''
+camera_frame = ''
+ros_tf_transform_listener = None
+ros_tf_transform = None
+fleet_dict = {}
+is_shutdown = False
+
+def satellite_detections_callback(msg):
+    global last_locations
+    # iterate through the tags
+    for detection in msg.detections:
+        # update the locations
+        last_locations[ detection.id ] = detection.pose
+
+
+
+def lcm_publisher_thread_fcn():
+    global last_locations, world_frame, camera_frame, ros_tf_transform_listener
+    # initialize LCM
+    lcm_h = lcm.LCM()
+    # compute wait time
+    wait_time = 1.0 / float(locations_broadcast_hz)
+    # loop indefinitely
+    while True:
+        if is_shutdown or rospy.is_shutdown():
+            return
+        # publish all the locations
+        for tag_id, tag_reading in last_locations.items():
+            # transform pose
+            try:
+                ros_tf_transform_listener.waitForTransform(world_frame, camera_frame, tag_reading.header.stamp, rospy.Duration(0.3))
+                world_pose = ros_tf_transform_listener.transformPose(world_frame, tag_reading)
+            except:
+                continue
+
+            # retrieve orientation
+            rpy = transformations.euler_from_quaternion(
+                (
+                    world_pose.pose.orientation.x,
+                    world_pose.pose.orientation.y,
+                    world_pose.pose.orientation.z,
+                    world_pose.pose.orientation.w
+                )
+            )
+            theta = ( rpy[2] - 3.1416/2.0 ) % 3.1416
+
+            # retrieve vehicle name
+            veh = fleet_dict[tag_id] if tag_id in fleet_dict else 'NOT_FOUND'
+
+            # create LCM message
+            msg = vgps_location_msg()
+            msg.timestamp = int(rospy.get_time())
+            msg.location = [ world_pose.pose.position.x, world_pose.pose.position.y ]
+            msg.theta = theta
+            msg.vehicle = veh
+            msg.vehicle_id = str(tag_id)
+            # publish
+            lcm_h.publish( locations_lcm_channel, msg.encode() )
+        # wait
+        time.sleep(wait_time)
+
+if __name__ == '__main__':
+    # initialize ROS node
+    print "Initializing ROS node... ",
+    rospy.init_node('visual_gps_server_node')
+    print "Done!"
+
+    # get ROS parameters
+    satellites = rospy.get_param('~satellites_list', '["gps_satellite"]')
+    locations_lcm_channel = rospy.get_param('~locations_lcm_channel', 'VISUAL_GPS')
+    world_frame = rospy.get_param('~world_frame', '/map')
+    camera_frame = rospy.get_param('~camera_frame', '/camera_link')
+    fleet_str = rospy.get_param('~fleet', '{}')
+
+    # try to parse the `satellites_list` param
+    try: satellites = eval(satellites)
+    except: satellites = ['gps_satellite']  # TODO: print warning?
+
+    # try to parse the `fleet_str` param
+    try: fleet_dict = eval(fleet_str)
+    except: fleet_dict = {}  # TODO: print warning?
+
+    # create TF listener
+    ros_tf_transform_listener = TransformListener()
+
+    # subscribe to all satellites
+    for satellite in satellites:
+        satellite_detections_topic = '/%s/tag_detections' % satellite
+        # create subscriber
+        rospy.Subscriber( satellite_detections_topic, AprilTagDetectionArray, satellite_detections_callback, queue_size=1 )
+
+    # create and launch async publisher node
+    lcm_publisher = Thread(target=lcm_publisher_thread_fcn, args=[])
+    lcm_publisher.start()
+
+    # spin indefinitely
+    rospy.spin()
+
+    is_shutdown = True
+    lcm_publisher.join()
