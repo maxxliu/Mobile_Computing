@@ -12,12 +12,18 @@
     <arg name="viewport_offset_x" default="0" />
     <arg name="viewport_offset_y" default="0" />
 
+    <arg name="use_image_timestamp" default="true" />
+    <arg name="sensor_frame_id" default="apriltag_camera" />
+
+
     <node name="$(arg node_name)" pkg="$(arg pkg_name)" type="$(arg node_name)" output="screen">
         <rosparam param="tag_descriptions" command="load" file="$(find apriltags_ros)/../signs_and_tags/tag_sizes_200-220.yaml"/>
+        <param name="sensor_frame_id" value="$(arg sensor_frame_id)" type="str" />
         <param name="region" value="$(arg region)" type="str" />
         <param name="region_overlap" value="$(arg region_overlap)" type="double" />
         <param name="viewport_offset_x" value="$(arg viewport_offset_x)" />
         <param name="viewport_offset_y" value="$(arg viewport_offset_y)" />
+        <param name="use_image_timestamp" value="$(arg use_image_timestamp)" />
     </node>
 
 </launch>

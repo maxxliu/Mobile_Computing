@@ -43,6 +43,7 @@ namespace apriltags_ros{
             double region_overlap;
             double viewport_offset_x;
             double viewport_offset_y;
+            bool use_image_timestamp;
     };
 }
 
