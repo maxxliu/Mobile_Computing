@@ -42,6 +42,9 @@ namespace apriltags_ros{
         if(!pnh.getParam("viewport_offset_y", viewport_offset_y)){
             viewport_offset_y = 0;
         }
+        if(!pnh.getParam("use_image_timestamp", use_image_timestamp)){
+            use_image_timestamp = false;
+        }
 
         AprilTags::TagCodes tag_codes = AprilTags::tagCodes36h11;
         tag_detector_= boost::shared_ptr<AprilTags::TagDetector>(new AprilTags::TagDetector(tag_codes));
@@ -147,7 +150,7 @@ namespace apriltags_ros{
         double py = cam_info->K[5];
 
         if(!sensor_frame_id_.empty())
-        cv_ptr->header.frame_id = sensor_frame_id_;
+            cv_ptr->header.frame_id = sensor_frame_id_;
 
         apriltags_ros::AprilTagDetectionArray tag_detection_array;
         geometry_msgs::PoseArray tag_pose_array;
@@ -184,6 +187,12 @@ namespace apriltags_ros{
             tag_pose.pose.orientation.z = rot_quaternion.z();
             tag_pose.pose.orientation.w = rot_quaternion.w();
             tag_pose.header = cv_ptr->header;
+
+            // tag_pose.header.frame_id = sensor_frame_id_;
+
+            if( !use_image_timestamp ){
+                tag_pose.header.stamp = ros::Time::now();
+            }
 
             apriltags_ros::AprilTagDetection tag_detection;
             tag_detection.pose = tag_pose;
