@@ -16,10 +16,15 @@
 
     <arg name="image_proc_manager_name" value="image_proc_nodelet_manager" />
 
+    <!-- NOTE: this is a hack due to image_proc/resize not setting the timestamp -->
+    <arg name="use_image_timestamp" value="false" />
+
+    <arg name="fleet" value="{200:'afduck', 201:'maxliubot', 202:'noahsduck'}" />
+
     <!-- Camera -->
  	<include file="$(find rtsp_ros_driver)/launch/rtsp_camera.launch">
         <arg name="camera_name" value="$(arg camera_name)" />
-        <arg name="camera_frame" value="$(arg camera_name)" />
+        <arg name="camera_frame" value="$(arg camera_frame)" />
         <arg name="hostname" value="192.168.1.2" />
         <arg name="username" value="duckietown-visitor" />
         <arg name="password" value="duckiet0wn" />
@@ -83,30 +88,38 @@
         <remap from="image_rect" to="/duckietown/birdeye_camera/scaled/town/image_rect" />
         <group ns="gps_satellite_nw">
             <include file="$(find apriltags_ros)/launch/apriltag_detector_node.launch">
+                <arg name="sensor_frame_id" value="$(arg camera_frame)" />
                 <arg name="region" value="north-west" />
                 <arg name="viewport_offset_x" value="$(arg scaled_ROI_x)" />
                 <arg name="viewport_offset_y" value="$(arg scaled_ROI_y)" />
+                <arg name="use_image_timestamp" value="$(arg use_image_timestamp)" />
             </include>
         </group>
         <group ns="gps_satellite_sw">
             <include file="$(find apriltags_ros)/launch/apriltag_detector_node.launch">
+                <arg name="sensor_frame_id" value="$(arg camera_frame)" />
                 <arg name="region" value="south-west" />
                 <arg name="viewport_offset_x" value="$(arg scaled_ROI_x)" />
                 <arg name="viewport_offset_y" value="$(arg scaled_ROI_y)" />
+                <arg name="use_image_timestamp" value="$(arg use_image_timestamp)" />
             </include>
         </group>
         <group ns="gps_satellite_se">
             <include file="$(find apriltags_ros)/launch/apriltag_detector_node.launch">
+                <arg name="sensor_frame_id" value="$(arg camera_frame)" />
                 <arg name="region" value="south-east" />
                 <arg name="viewport_offset_x" value="$(arg scaled_ROI_x)" />
                 <arg name="viewport_offset_y" value="$(arg scaled_ROI_y)" />
+                <arg name="use_image_timestamp" value="$(arg use_image_timestamp)" />
             </include>
         </group>
         <group ns="gps_satellite_ne">
             <include file="$(find apriltags_ros)/launch/apriltag_detector_node.launch">
+                <arg name="sensor_frame_id" value="$(arg camera_frame)" />
                 <arg name="region" value="north-east" />
                 <arg name="viewport_offset_x" value="$(arg scaled_ROI_x)" />
                 <arg name="viewport_offset_y" value="$(arg scaled_ROI_y)" />
+                <arg name="use_image_timestamp" value="$(arg use_image_timestamp)" />
             </include>
         </group>
     </group>
@@ -119,18 +132,29 @@
         <remap from="image_rect" to="/duckietown/birdeye_camera/scaled/town/image_rect" />
         <group ns="gps_satellite">
             <include file="$(find apriltags_ros)/launch/apriltag_detector_node.launch">
+                <arg name="sensor_frame_id" value="$(arg camera_frame)" />
                 <arg name="viewport_offset_x" value="$(arg scaled_ROI_x)" />
                 <arg name="viewport_offset_y" value="$(arg scaled_ROI_y)" />
+                <arg name="use_image_timestamp" value="$(arg use_image_timestamp)" />
             </include>
         </group>
     </group>
 
 
     <!-- Export frames -->
-    <node pkg="tf" type="static_transform_publisher" name="bird_eye_camera_tf_broadcaster" output="screen" args="-1.63 -1.58 3.14 0 0 0 $(arg world_frame) $(arg camera_frame) 100" />
+    <node pkg="tf" type="static_transform_publisher" name="bird_eye_camera_tf_broadcaster" output="screen" args="1.63 1.58 3.14 1.5708 0 3.1416 $(arg world_frame) $(arg camera_frame) 15" />
 
 
  	<!-- Postprocessing node -->
-
+    <node pkg="mobile_computing" type="gps_service" name="gps_provider_node" output="screen">
+        <param name="satellites_list" if="$(arg multiple_satellites)"
+                value="['gps_satellite_nw', 'gps_satellite_sw', 'gps_satellite_se', 'gps_satellite_ne']" />
+        <param name="satellites_list" unless="$(arg multiple_satellites)"
+                value="['gps_satellite']" />
+        <param name="world_frame" value="$(arg world_frame)" />
+        <param name="camera_frame" value="$(arg camera_frame)" />
+        <param name="fleet" value="$(arg fleet)" />
+        <param name="locations_lcm_channel" value="VISUAL_GPS" />
+    </node>
 
 </launch>
