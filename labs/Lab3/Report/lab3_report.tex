@@ -31,12 +31,27 @@
 
 \section{Task and Challenges}
 \vspace{-.3cm}
-//TODO
+The goal of this lab was to deploy a lane detection algorithm and to design
+an algorithm that moves the car along the detected lane.
 
+Although the lane detection algorithm was provided, the hardware and software
+provided imposed some key challenges to creating a robust self driving
+algorithm. The car itself had difficulty driving in a straight line because the
+wheels were skewed slightly towards the right, this means that to drive in a
+straight path the car would constantly have to adjust the perceived angle of
+its wheels. Furthermore, the camera attached to the car was limited in its range
+of vision. This led challenges where the camera was unable to capture the lane
+within the frame if the car was driving too quickly or if the turn was too sharp.
+On the software wide, the lane detection algorithm was extremely unpredictable
+when the lanes were out of frame so a lot of effort was dedicated to making sure
+that the camera would always be able to capture both of the lanes. Finally, the
+rate at which the car was receiving lane data was quite slow (a few frames a
+second), this was a bottleneck in how quickly we could allow the car to drive
+itself.
 
 \section{Proposed Approach}
 \vspace{-.3cm}
-//TODO
+At a high level
 
 \section{Results}
 \vspace{-.3cm}
