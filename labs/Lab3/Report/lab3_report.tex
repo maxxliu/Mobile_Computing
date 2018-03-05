@@ -51,16 +51,64 @@ itself.
 
 \section{Proposed Approach}
 \vspace{-.3cm}
-At a high level
+At a high level, the algorithm we used to drive the car consisted of taking the
+midpoint of the camera frame and taking the calculated midpoint position of the
+detected lanes. Ideally, we would want the midpoint of the detected lanes to match
+the midpoint of the camera frame.
+
+In order to accomplish this we first calculated the dimensions of the frame returned
+by the camera and set that as the ideal midpoint. Now, for every midpoint returned
+by the lane detection algorithm we can calculate the distance between that and the
+ideal midpoint. This then gives us an idea of the direction and angle for which we
+should point the wheels and should create relatively smooth movement of the car(
+no sudden jerky movements to adjust or make a turn).
+
+An additional feature that we had implemented in order to combat the issue
+with loss of lane detection is to create a "memory" of previous midpoints and
+use a moving average of these to determine what angle to position the wheels. If
+the lane readings were to vary drastically this would help to smooth out noisy
+readings and keep the car on track.
 
 \section{Results}
 \vspace{-.3cm}
-//TODO
+We ran tests that varied speed, angle changes, and memory. It was found that the
+slower the speed the higher the chance the car would successfully drive itself in
+the lane, low to medium angle changes were more affective than aggressive angle changes,
+and we found that having no memory (not deploying the memory feature) was more
+effective than having a memory.
+
+Due to the slow rate at which the lane detection algorithm was able to send data to
+our car, the car had to move very slowly in order to process the lane in front of it
+and make adjustments accordingly. If the car moved too quickly, by the time the car
+decided to make an adjustment, its actual location was no longer in its perceived location.
+
+When deciding how much to turn each wheel when the midpoint was off, we took an iterative
+approach where we tested varying degree change functions (modest, medium, aggressive).
+Essentially, this meant changing some scalar value that determined how much to turn
+based on the distance from the ideal midpoint.
+
+Finally, it was found that having a memory was not as effective as simply making sure
+that the car could keep both lanes in the frame at all times. Having a memory actually
+decreased the performance of our car due to the equal weighting of the previous moves,
+the car did not turn as much was necessary in order to stay in the lane.
+
+Ultimately, we were able to successfully navigate straight lanes, left turns, and right
+turns. This was done by calibrating our midpoint to angle change algorithm until it was
+able to complete the course. It also resulted in extremely smooth driving by our car due to
+the constant angle adjustments.
 
 
 \section{Conclusion}
 \vspace{-.3cm}
-//TODO
+As autonomous vehicles become more and more prevalent, it is not difficult to imagine
+a future where the roads are dominated by autonomous vehicles. Through the experiments
+that we ran with very simple hardware and software, we were able to relatively easily
+achieve self driving within a lane. This was done simply by establishing an ideal point
+to follow and making adjustments along the way as the car deviated from the ideal. In modern
+autonomous vehicles, the hardware is a lot more powerful and more precise allowing for more
+complex maneuvers and situations; however, this was a good first step in understanding
+the difficulties of autonomous vehicles and working towards fully understanding autonomous
+vehicles.
 
 \bibliographystyle{abbrvnat}
 {\scriptsize%
