@@ -57,7 +57,7 @@ def lcm_publisher_thread_fcn():
                     world_pose.pose.orientation.w
                 )
             )
-            theta = ( rpy[2] - 3.1416/2.0 ) % 3.1416
+            theta = rpy[2]
 
             # retrieve vehicle name
             veh = fleet_dict[tag_id] if tag_id in fleet_dict else 'NOT_FOUND'
