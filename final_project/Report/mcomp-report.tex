@@ -1,0 +1,86 @@
+%\documentclass{sig-alternate-05-2015}
+\documentclass[conference]{IEEEtran_custom}
+
+\pdfoutput=1 % Force arXiv to use PDFLaTeX
+
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{comment}
+\usepackage{amssymb,amsmath, amsfonts}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+\usepackage{epsfig}
+\usepackage{graphicx}
+\usepackage[tight]{subfigure}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{xspace} % Used for managing spaces after defined symbols
+\usepackage{flushend}
+\usepackage{color}
+\usepackage[numbers]{natbib}
+\usepackage{subfigure}
+\usepackage{textcomp}
+
+\usepackage[textsize=scriptsize]{todonotes}
+
+% configure TODONOTES
+\setlength{\marginparsep}{0.1cm}
+\setlength{\marginparwidth}{1.75cm}
+\newcommand{\todonh}[1]{\todo[fancyline,color=green!40]{MW: #1}}
+\newcommand{\todoinnh}[1]{\todo[inline,color=green!40]{MW: #1}}
+\newcommand{\todoml}[1]{\todo[fancyline,color=blue!40]{MB: #1}}
+\newcommand{\todoinml}[1]{\todo[inline,color=blue!40]{MB: #1}}
+\newcommand{\todoad}[1]{\todo[fancyline,color=red!40]{AD: #1}}
+\newcommand{\todoinad}[1]{\todo[inline,color=red!40]{AD: #1}}
+
+% define new column types
+\newcolumntype{M}[1]{>{\arraybackslash}m{#1}}
+\newcolumntype{C}[1]{>{\centering \arraybackslash}m{#1}}
+\newcolumntype{N}{@{}m{0pt}@{}}
+
+\renewcommand{\tabularxcolumn}[1]{>{\small}m{#1}}
+
+
+% configure BIB
+\bibpunct{[}{]}{,}{n}{}{;}
+
+
+\hypersetup{pdfinfo={
+Title={TITLE HERE},
+Author={Andrea F. Daniele, Noah Hirsch, and Max Liu},
+}}
+
+\begin{document}
+
+% paper title
+\title{TITLE HERE}
+
+\author{
+\IEEEauthorblockN{Andrea F. Daniele}
+\IEEEauthorblockA{TTI-Chicago, USA\\
+{\tt afdaniele@ttic.edu}}
+\and
+\IEEEauthorblockN{Noah Hirsch}
+\IEEEauthorblockA{University of Chicago, USA\\
+{\tt YOUR.EMAIL}}
+\and
+\IEEEauthorblockN{Max Liu}
+\IEEEauthorblockA{University of Chicago, USA\\
+{\tt YOUR.EMAIL}}
+}
+
+
+
+\maketitle
+
+
+\input{mcomp-abstract}
+\input{mcomp-intro}
+
+%% Use plainnat to work nicely with natbib. 
+\bibliographystyle{abbrvnat}
+{\small%
+	\bibliography{references}%
+}
+
+\end{document}
