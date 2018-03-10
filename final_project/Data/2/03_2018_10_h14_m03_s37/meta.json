@@ -1,0 +1,1 @@
+{"reaction_type": "stop", "communication_radius": 1.8, "perception_distance": 0.8, "allow_propagation": false, "interference_model": "linear", "reaction_radius": 0.5, "event_location": [2.68, 2.1]}
