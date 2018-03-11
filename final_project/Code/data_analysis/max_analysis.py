@@ -61,4 +61,4 @@ def locations_to_xy(locations):
 
     return x, y
 
-plot_positions(THREE, '3')
+plot_positions(ONE, '1')
