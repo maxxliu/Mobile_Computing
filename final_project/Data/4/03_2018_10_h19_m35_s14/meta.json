@@ -1,0 +1,1 @@
+{"allow_propagation": true, "interference_model": "linear", "reaction_type": "stop", "reaction_radius": 0.9, "communication_radius": 1.8, "event_location": [2.68, 2.1], "allow_republish": true, "perception_distance": 0.8}
