@@ -1,8 +1,22 @@
 \section{Introduction}
-
-//TODO
+In order to increase autonomous vehicle safety and optimize route planning, vehicles must be able to effectively 
+communicate with one another. Specifically in hazardous situations, it is critical to communicate useful data to 
+relevant vehicles.
+One of the main challenges in fleet-level communication is the choice of a network infrastructure suitable
+for the task. Wi-Fi networks are fast and cheap to deploy but have a limited range. Communication via satellites
+offer an unlimited range but it is expensive to deploy. Another challenge is that of deciding how much effort
+each car should put in trying to advertise a dangerous situation to nearby vehicles. 
+Even though self-driving vehicles are expected to be capable of processing a lot of information directly on-board, 
+network infrastructure technologies still require engineers to minimize the amount of data exchanged on shared
+communication infrastructures such as cellular or Wi-Fi network.
+We are interested in finding a set of functionalities that a fleet-level communication pipeline should exhibit
+such that we can improved the safety of self-driving vehicles while minimizing the impact on on-board computers
+and network infrastructures.
+Tests on a realistic model of a town show that our communication strategy can reduce the number of
+collisions by about $\collision_ratio_reduction_perc\%$.
 
 \begin{figure}[t]
+	\vspace{0.2cm}
     \centering
     \includegraphics[width=0.48\textwidth]{figures/full-model_viewer.jpg}
     \caption{3D view of Duckietown (no simulation) showing vehicles stopping in line without colliding

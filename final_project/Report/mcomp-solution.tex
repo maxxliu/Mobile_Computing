@@ -13,14 +13,13 @@ a partially unknown environment. In this work we enable vehicles to explicitly c
 is indicated in Figure~\ref{fig:model_block_diagram} by the green block ''Fleet-aware Controller``.
 A fleet-aware controller process in a self-driving vehicle has two objectives: notifying other vehicles about
 hazardous situations that the vehicle is aware of, and stopping the vehicle at a safe distance from a dangerous location.
-
 A fleet-aware controller must have access both the internal and the external communication pipeline. The internal communication
 pipeline is usually a centralized message-based communication architecture that allows processes within the same vehicle to exchange
 messages. The external communication pipeline is usually a distributed message-based communication architecture that allow
 vehicles that are physically far from each other to exchange information. 
 Both these modules are fundamental to our approach but neither the definition nor the implementation of any of them is within
 the scope of this work.
-We are interesting in which information to bridge from the internal communication network to the external and viceversa as well as
+We are interested in which information to bridge from the internal communication network to the external and viceversa as well as
 how often the same information should be broadcasted in or out of the vehicle.
 Our fleet-aware controller is comprised of five main features:
 
@@ -31,6 +30,24 @@ Our fleet-aware controller is comprised of five main features:
 \item Message broadcasting
 \item Vehicle-chain-aware communication strategy
 \end{itemize}
+
+\begin{figure*}[t]
+	\begin{subfigure}{0.78\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/duckietown.jpg}
+	    \vspace{-12pt}
+	    \caption{\label{fig:duckietown}}
+	\end{subfigure}
+	%
+	\begin{subfigure}{0.193\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{figures/duckiebot.jpg}
+		\caption{\label{fig:duckiebot}}
+	\end{subfigure}
+	%
+	\caption{Duckietown at the Toyota Technological Institute at Chicago (TTIC) and Duckiebot robot used in this work}
+	\label{fig:test-bed}
+\end{figure*}
 
 \subsection{Local knowledge and emergency stop}
 A vehicle maintains a database of known dangerous locations. The vehicle gently stops when the distance to the closest

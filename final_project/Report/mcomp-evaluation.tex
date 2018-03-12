@@ -1,23 +1,5 @@
 \section{Evaluation and Results}
 
-\begin{figure*}
-	\begin{subfigure}{0.78\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{figures/duckietown.jpg}
-	    \vspace{-12pt}
-	    \caption{\label{fig:duckietown}}
-	\end{subfigure}
-	%
-	\begin{subfigure}{0.193\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{figures/duckiebot.jpg}
-		\caption{\label{fig:duckiebot}}
-	\end{subfigure}
-	%
-	\caption{Duckietown at the Toyota Technological Institute at Chicago (TTIC) and Duckiebot robot used in this work}
-	\label{fig:test-bed}
-\end{figure*}
-
 We evaluate our communication pipeline on a fleet of robots (i.e., Duckiebots) driving autonomously in a 
 realistic model of a town called Duckietown~\cite{paull2017duckietown}. Figures~\ref{fig:duckietown} 
 and~\ref{fig:duckiebot} show respectively our test-bed Duckietown, and one of the Duckiebots used in our 
@@ -31,18 +13,15 @@ The vehicles used in Duckietown are called Duckiebots (Figure~\ref{fig:duckiebot
 chassis and are controlled by an on-board Raspberry Pi 3 Model B. Duckiebots feature a on-board camera for lane detection and 
 a $2.4$GHz b/g/n Wi-Fi module. The Duckietown software stack uses ROS (Robot Operating System)~\cite{quigley2009ros} 
 as internal communication protocol, though it does not provide any support or implementation for fleet-level communication.
-
 As for the external communication protocol, we use LCM (Lightweight Communications and Marshalling)~\citep{huang2010lcm}.
 LCM is a multi-platform library that allows simple low-latency messaging between processes and devices. All the vehicles are 
 connected to a central Wi-Fi Access Point.
 
 
-\subsubsection{GPS-like localization}
 Self-driving vehicles in the real world can exchange information about locations of interests without any ambiguity since
 they all share the same reference frame, that is the geographic coordinate system used by GPS (Global Positioning System) satellites.
 Duckietown does not use the standard GPS technology for two reasons: (i) the GPS signal is not available indoor; (ii) the GPS provide
 a localization error (about $3-4$ meters) that is bigger than the size of the whole Duckietown.
-
 In order to provide the Duckiebots a GPS-like service, we equipped each Duckiebot with an AprilTag visual fiducial 
 marker~\cite{olson2011tags} with the normal to the tag orthogonal to the road and pointing to the ceiling of the room.
 A camera with wide field-of-view is attached to the ceiling of the room, at the center of the town looking down. This allows
@@ -91,7 +70,6 @@ we broadcast to the robots and their actual location.
 
 \subsection{Ablation tests}
 As explained in Section~\ref{sec:solution}, our communication pipeline is comprised of five key features.
-
 We believe that these features are fundamental for improving self-driving vehicles' safety via explicit
 communication. In order to study the contribution of each feature, we run an ablation test, in which we
 run the same number of experiments on a version of our pipeline obtained by disabling one or multiple
@@ -156,19 +134,19 @@ the load on the communication channel.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.48\textwidth, height=0.22\textwidth]{figures/collision_ratio.pdf}
+    \includegraphics[width=0.48\textwidth, height=0.24\textwidth]{figures/collision_ratio.pdf}
     \caption{Collision ratio ($C$) for different communication models \label{fig:collision_ratio}}
 \end{figure}
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.48\textwidth, height=0.22\textwidth]{figures/distance_from_POI.pdf}
+    \includegraphics[width=0.48\textwidth, height=0.24\textwidth]{figures/distance_from_POI.pdf}
     \caption{Distance from the $POI$ ($D_p$) for different communication models \label{fig:distance_from_poi}}
 \end{figure}
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=0.48\textwidth, height=0.22\textwidth]{figures/safety_distance.pdf}
+    \includegraphics[width=0.48\textwidth, height=0.24\textwidth]{figures/safety_distance.pdf}
     \caption{Safety distance ($D_s$) between two consecutive vehicles \label{fig:safety_distance}}
 \end{figure}
 
@@ -177,7 +155,7 @@ between the $POI$ and the place where the vehicles stopped, and the average dist
 between two consecutive vehicles respectively (both scaled to the real world).
 The distance $D_p$ is close to $4.5$ meters for the \textbf{baseline} model since all car collide with each 
 other around the $POI$. The models \textbf{simple} and \textbf{propagation} increase both 
-$D_p$ and $D_s$ compared to the baseline, but they fail when vehicles are outside the communication range(s).
+$D_p$ and $D_s$ compared to the \textbf{baseline} model, but they fail when vehicles are outside the communication range(s).
 The complete pipeline \textbf{full-model} succeed in warning vehicles that enter the communication range(s) later.
 Unlike $D_p$, $D_s$ does not depend on the number of vehicles involved in the experiment, hence it 
 is an absolute indicator of safety. Figure~\ref{fig:3d_viewer_full_model} shows a 3D visualization of Duckietown
@@ -190,3 +168,7 @@ indicate the location advertised by the vehicles as \textit{dangerous}.
 The proposed communication model achieves a collision ratio reduction of about $\collision_ratio_reduction_perc\%$,
 while increasing the distance from the $POI$ and the safety distance between vehicles by a factor of 
 $3$ and $5$ respectively, compared to the baseline.
+It is important to notice that Figure~\ref{fig:collision_ratio} present a bias of $1/N$ because we assumed that
+the first vehicle must collide with the damaged vehicle to detect it. This assumption is necessary to define a
+baseline to compare against. Giving the first vehicle to time to perceive the obstacle and stop safely would 
+raise the question why the others cannot do the same.
