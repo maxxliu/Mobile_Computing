@@ -13,13 +13,13 @@ a partially unknown environment. In this work we enable vehicles to explicitly c
 is indicated in Figure~\ref{fig:model_block_diagram} by the green block ''Fleet-aware Controller``.
 A fleet-aware controller process in a self-driving vehicle has two objectives: notifying other vehicles about
 hazardous situations that the vehicle is aware of, and stopping the vehicle at a safe distance from a dangerous location.
-A fleet-aware controller must have access both the internal and the external communication pipeline. The internal communication
+A fleet-aware controller must have access to both the internal and the external communication pipeline. The internal communication
 pipeline is usually a centralized message-based communication architecture that allows processes within the same vehicle to exchange
 messages. The external communication pipeline is usually a distributed message-based communication architecture that allow
-vehicles that are physically far from each other to exchange information. 
+vehicles that are physically far from each other to exchange information.
 Both these modules are fundamental to our approach but neither the definition nor the implementation of any of them is within
 the scope of this work.
-We are interested in which information to bridge from the internal communication network to the external and viceversa as well as
+We are interested in what information to bridge from the internal communication network to the external and viceversa as well as
 how often the same information should be broadcasted in or out of the vehicle.
 Our fleet-aware controller is comprised of five main features:
 
@@ -52,12 +52,12 @@ Our fleet-aware controller is comprised of five main features:
 \subsection{Local knowledge and emergency stop}
 A vehicle maintains a database of known dangerous locations. The vehicle gently stops when the distance to the closest
 dangerous location is approaching the safety distance. This feature does not require or subsume any communication
-strategy. It is a mere safety feature with no knowledge about other vehicles. The following features will be responsible 
+strategy. It is a mere safety feature with no knowledge about other vehicles. The following features will be responsible
 for updating and sharing such a database.
 
 \subsection{Single message transmission}
-When a vehicle comes within observation distance of an obstruction on the road (e.g., an accident), 
-it adds the location to its internal database and sends out a single danger message to every vehicle within its 
+When a vehicle comes within observation distance of an obstruction on the road (e.g., an accident),
+it adds the location to its internal database and sends out a single danger message to every vehicle within its
 communication range. This message contains the location of the danger (GPS coordinates) and the time of the observation.
 When a vehicle receives a message from another vehicle, it adds the location of the danger to its internal database.
 
@@ -66,10 +66,10 @@ When a vehicle receives a message from another vehicle, it also retransmits the 
 its communication range. This creates a propagation effect throughout the network of vehicles.
 
 \subsection{Message broadcasting}
-Each vehicle is responsible for maintaining an updated located database of dangerous locations. By using perception
+Each vehicle is responsible for maintaining an updated database of dangerous locations. By using perception
 they can declare a location as safe. With message broadcasting, each vehicle will republish all the known dangerous
 locations in its database to the nearby vehicles with fixed frequency $F$. This will enable vehicles that enter the
-communication range of another vehicles at any given time to receive updated information about the safety of the surroundings.
+communication range of other vehicles at any given time to receive updated information about the safety of the surroundings.
 
 \subsection{Vehicle-chain-aware communication strategy}
 When a vehicle stops due to the presence of an obstruction, it suddenly becomes an obstruction itself.

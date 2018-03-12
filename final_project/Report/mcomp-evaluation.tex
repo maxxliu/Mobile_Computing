@@ -1,28 +1,28 @@
 \section{Evaluation and Results}
 
-We evaluate our communication pipeline on a fleet of robots (i.e., Duckiebots) driving autonomously in a 
-realistic model of a town called Duckietown~\cite{paull2017duckietown}. Figures~\ref{fig:duckietown} 
-and~\ref{fig:duckiebot} show respectively our test-bed Duckietown, and one of the Duckiebots used in our 
+We evaluate our communication pipeline on a fleet of robots (i.e., Duckiebots) driving autonomously in a
+realistic model of a town called Duckietown~\cite{paull2017duckietown}. Figures~\ref{fig:duckietown}
+and~\ref{fig:duckiebot} show respectively our test-bed Duckietown, and one of the Duckiebots used in our
 experiments.
 
 \subsection{Implementation}
 Duckietown is a robotics educations and outreach effort. For our experiments we use a 3-by-4 meters Duckietown
-with three 3-way and one 4-way intersections. 
-The combination of hardware and software allows for highly modular autonomous vehicles and smart-cities research. 
-The vehicles used in Duckietown are called Duckiebots (Figure~\ref{fig:duckiebot}) and they use a battery-powered 3-wheeled 
-chassis and are controlled by an on-board Raspberry Pi 3 Model B. Duckiebots feature a on-board camera for lane detection and 
-a $2.4$GHz b/g/n Wi-Fi module. The Duckietown software stack uses ROS (Robot Operating System)~\cite{quigley2009ros} 
-as internal communication protocol, though it does not provide any support or implementation for fleet-level communication.
+with three 3-way and one 4-way intersections.
+The combination of hardware and software allows for highly modular autonomous vehicles and smart-cities research.
+The vehicles used in Duckietown are called Duckiebots (Figure~\ref{fig:duckiebot}) and use a battery-powered 3-wheeled
+chassis and are controlled by an on-board Raspberry Pi 3 Model B. Duckiebots feature an on-board camera for lane detection and
+a $2.4$GHz b/g/n Wi-Fi module. The Duckietown software stack uses ROS (Robot Operating System)~\cite{quigley2009ros}
+as its internal communication protocol, though it does not provide any support or implementation for fleet-level communication.
 As for the external communication protocol, we use LCM (Lightweight Communications and Marshalling)~\citep{huang2010lcm}.
-LCM is a multi-platform library that allows simple low-latency messaging between processes and devices. All the vehicles are 
+LCM is a multi-platform library that allows simple low-latency messaging between processes and devices. All the vehicles are
 connected to a central Wi-Fi Access Point.
 
 
 Self-driving vehicles in the real world can exchange information about locations of interests without any ambiguity since
 they all share the same reference frame, that is the geographic coordinate system used by GPS (Global Positioning System) satellites.
-Duckietown does not use the standard GPS technology for two reasons: (i) the GPS signal is not available indoor; (ii) the GPS provide
+Duckietown does not use the standard GPS technology for two reasons: (i) the GPS signal is not available indoors; (ii) the GPS provides
 a localization error (about $3-4$ meters) that is bigger than the size of the whole Duckietown.
-In order to provide the Duckiebots a GPS-like service, we equipped each Duckiebot with an AprilTag visual fiducial 
+In order to provide the Duckiebots a GPS-like service, we equipped each Duckiebot with an AprilTag visual fiducial
 marker~\cite{olson2011tags} with the normal to the tag orthogonal to the road and pointing to the ceiling of the room.
 A camera with wide field-of-view is attached to the ceiling of the room, at the center of the town looking down. This allows
 us to estimate the pose of each Duckiebot within Duckietown simply by detecting the fiducial markers and estimating their
@@ -32,40 +32,40 @@ The localization service is provided to the Duckiebots via LCM messages with a f
 
 
 \subsection{Experiments}
-We test our communication pipeline on a common hazardous situations, that is a car accident at a 3-way 
+We test our communication pipeline on a common hazardous situations, that is a car accident at a 3-way
 intersection in the case of low visibility conditions. For the remainder of this document we will refer to the location of
-the accident (its GPS coordinates) as the \textit{Point of Interest} ($POI$). 
-In our scenario, after the accident occurred, a number of 
+the accident (its GPS coordinates) as the \textit{Point of Interest} ($POI$).
+In our scenario, after the accident occurred, a number of
 vehicles $N$ will approach the same intersection from different directions and with different speed.
-We test our model on a variable number of vehicles between $3$ and $6$. We observe consistent 
+We test our model on a variable number of vehicles between $3$ and $6$. We observe consistent
 results across all the values of $N$ that we consider.
 One experiment starts with $N$ vehicles start moving at the same time and from different locations and
 driving towards the $POI$. The experiment ends when all the vehicles stop (either after they crashed
 or stopped safely).
-In our experiments, due to the lack of visibility, the first vehicle approaching the intersection will inevitably crash 
+In our experiments, due to the lack of visibility, the first vehicle approaching the intersection will inevitably crash
 into the damaged vehicle. Immediately after the crash, the communication pipeline of such vehicle takes over.
-We are interested in reducing the ratio $C$ of cars colliding with each other, as well as increasing 
-the average distance $D_p$ from the $POI$ (how far away from the $POI$ a vehicle will stop) and the safety 
+We are interested in reducing the ratio $C$ of cars colliding with each other, as well as increasing
+the average distance $D_p$ from the $POI$ (how far away from the $POI$ a vehicle will stop) and the safety
 distance $D_s$, that is the average distance between two consecutive vehicles.
 
-We evaluate the effectiveness of our pipeline by comparing the values of $C$, $D_p$, and $D_s$ 
+We evaluate the effectiveness of our pipeline by comparing the values of $C$, $D_p$, and $D_s$
 with those achieved by the baseline.
-In real life scenarios, when no autonomy is involved, 
-the outcome of such an event heavily depends on the drivers' ability, experience, attention, and 
-responsiveness~\cite{eby1995analysis} as well as visibility conditions (e.g., lens flare at sunset and 
+In real life scenarios, when no autonomy is involved,
+the outcome of such an event heavily depends on the drivers' ability, experience, attention, and
+responsiveness~\cite{eby1995analysis} as well as visibility conditions (e.g., lens flare at sunset and
 sunrise, fog, occlusions). This makes it hard to define
-a baseline to compare against. Although, we can all agree on two points: (i) the worst case (i.e., all approaching 
-cars crashing) is not unlikely to happen; (ii) the difference between worst and best case scenario is not a mere 
-number when people's lives is involved. For these reason, we consider the worst case as a baseline.
+a baseline to compare against. Although, we can all agree on two points: (i) the worst case (i.e., all approaching
+cars crashing) is not unlikely to happen; (ii) the difference between worst and best case scenario is not a mere
+number when people's lives are involved. For these reasons, we consider the worst case as a baseline.
 
 \subsection{Technological and Physical limitations}
-We are interested in the effect of our model in real life scenarios. In order to reduce the differences between 
-our lab setup and the real world, we simulate physical effects such as wireless communication range limits, 
+We are interested in the effect of our model in real life scenarios. In order to reduce the differences between
+our lab setup and the real world, we simulate physical effects such as wireless communication range limits,
 communication instability due to packets loss, and GPS-based localization latency.
-We artificially simulate the wireless communication limit to $\wireless_limit_meter m$ (scaled to real world) by 
+We artificially simulate the wireless communication limit to $\wireless_limit_meter m$ (scaled to real world) by
 ignoring all the messages that are sent from a distance that is higher than the limit. Communication instability
 is simulated by exchanging information via UDP protocol, that does not attempt re-transmission in case
-of lost packets (unlike TCP). We also introduce a $\gps_delay_sec$ second delay between the GPS location 
+of lost packets (unlike TCP). We also introduce a $\gps_delay_sec$ second delay between the GPS location
 we broadcast to the robots and their actual location.
 
 \subsection{Ablation tests}
@@ -75,23 +75,23 @@ communication. In order to study the contribution of each feature, we run an abl
 run the same number of experiments on a version of our pipeline obtained by disabling one or multiple
 features.
 In particular, we consider four different models: \textbf{baseline}, \textbf{simple}, \textbf{propagation},
-and \textbf{full-model}. 
+and \textbf{full-model}.
 
 \begin{table}[H]
 \centering
 \begin{tabular}{|l|r|r|r|r|}
 \hline
-& 
+&
 \multicolumn{4}{c|}{\textbf{Model}} \\
 \hline
-& 
-	\parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=l]{90}{\textbf{baseline}$\quad\quad\;\;\;$}}} 
-	& 
-	\parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=l]{90}{\textbf{simple}$\quad\quad\quad\;\;$}}} 
+&
+	\parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=l]{90}{\textbf{baseline}$\quad\quad\;\;\;$}}}
 	&
-	\parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=l]{90}{\textbf{propagation}$\quad\,$}}} 
-	& 
-	\parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=l]{90}{\textbf{full-model$\quad\quad$}}}} 
+	\parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=l]{90}{\textbf{simple}$\quad\quad\quad\;\;$}}}
+	&
+	\parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=l]{90}{\textbf{propagation}$\quad\,$}}}
+	&
+	\parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=l]{90}{\textbf{full-model$\quad\quad$}}}}
 \\
 & & & & \\
 & & & & \\
@@ -107,29 +107,29 @@ Message broadcasting & NO & NO & NO & YES \\
 \hline
 \end{tabular}
 \end{table}
- 
 
-We run $\num_test_per_scenario$ tests for each communication model. For a given vehicle, initial position, 
+
+We run $\num_test_per_scenario$ tests for each communication model. For a given vehicle, initial position,
 speed, and direction are kept unchanged throughout all the tests.
 
 \subsection{Results}
 
 Figure~\ref{fig:collision_ratio} shows the collision ratio observed for different communication models in the
 case of $N=3$ vehicles approaching the $POI$. We observe that in the absence of good visual perception
-(\textbf{baseline}), as we consider the worst case, the collision rate is $100\%$ as all the vehicles will end up 
+(\textbf{baseline}), as we consider the worst case, the collision rate is $100\%$ as all the vehicles will end up
 colliding with each other at the $POI$. By enabling the first vehicle that reaches the $POI$ (and collides) to
-warn all the vehicles within the communication range (\textbf{simple}), we found out that on 
+warn all the vehicles within the communication range (\textbf{simple}), we found out that on
 average, only one vehicle out of $3$ is close enough to receive the message and stop safely. It is worth noting
 that any other vehicle entering the communication range after the message was sent will not receive any message
-because the vehicle will not keep broadcasting the message. This means that whether the vehicles will collide or 
-not, strictly depends on their position when the message was generated. A natural extension of this model
-would be to allow all the vehicles that received the message to propagate it to other vehicles nearby 
+because the vehicle will not keep broadcasting the message. This means that whether or not the vehicles will collide
+, strictly depends on their position when the message was generated. A natural extension of this model
+would be to allow all the vehicles that received the message to propagate it to other vehicles nearby
 (\textbf{propagation} model). We notice that even though the average collision ratio decreases,
-the scenario can always degenerate to the case where all vehicles are too far from each other to exchange 
-messages, hence they will all collide. 
+the scenario can always degenerate to the case where all vehicles are too far from each other to exchange
+messages, hence they will all collide.
 Our complete communication pipeline (\textbf{full-model}) features all these communication strategies as well
-as a broadcasting mechanism that allow all the vehicles that receive a message to keep publishing it at a frequency 
-$F$. We empirically found that in our model of town, a frequency of $H=1Hz$ ensures safety while minimizing 
+as a broadcasting mechanism that allow all the vehicles that receive a message to keep publishing it at a frequency
+$F$. We empirically found that in our model of town, a frequency of $H=1Hz$ ensures safety while minimizing
 the load on the communication channel.
 
 \begin{figure}[t]
@@ -150,25 +150,25 @@ the load on the communication channel.
     \caption{Safety distance ($D_s$) between two consecutive vehicles \label{fig:safety_distance}}
 \end{figure}
 
-Figures~\ref{fig:distance_from_poi} and~\ref{fig:safety_distance} show the average distance 
-between the $POI$ and the place where the vehicles stopped, and the average distance 
+Figures~\ref{fig:distance_from_poi} and~\ref{fig:safety_distance} show the average distance
+between the $POI$ and the place where the vehicles stopped, and the average distance
 between two consecutive vehicles respectively (both scaled to the real world).
-The distance $D_p$ is close to $4.5$ meters for the \textbf{baseline} model since all car collide with each 
-other around the $POI$. The models \textbf{simple} and \textbf{propagation} increase both 
+The distance $D_p$ is close to $4.5$ meters for the \textbf{baseline} model since all car collide with each
+other around the $POI$. The models \textbf{simple} and \textbf{propagation} increase both
 $D_p$ and $D_s$ compared to the \textbf{baseline} model, but they fail when vehicles are outside the communication range(s).
 The complete pipeline \textbf{full-model} succeed in warning vehicles that enter the communication range(s) later.
-Unlike $D_p$, $D_s$ does not depend on the number of vehicles involved in the experiment, hence it 
+Unlike $D_p$, $D_s$ does not depend on the number of vehicles involved in the experiment, hence it
 is an absolute indicator of safety. Figure~\ref{fig:3d_viewer_full_model} shows a 3D visualization of Duckietown
 in which three Duckiebots stopped in a straight line without colliding into each other
 after successfully exchanging messages about an accident located at the North-East 3-way intersection ($POI$).
-The \textit{yellow} circles indicate the position of the vehicles after they stopped. 
-The \textit{blue} circles indicate their communication ranges. The \textit{red} cylinders 
+The \textit{yellow} circles indicate the position of the vehicles after they stopped.
+The \textit{blue} circles indicate their communication ranges. The \textit{red} cylinders
 indicate the location advertised by the vehicles as \textit{dangerous}.
 
 The proposed communication model achieves a collision ratio reduction of about $\collision_ratio_reduction_perc\%$,
-while increasing the distance from the $POI$ and the safety distance between vehicles by a factor of 
+while increasing the distance from the $POI$ and the safety distance between vehicles by a factor of
 $3$ and $5$ respectively, compared to the baseline.
-It is important to notice that Figure~\ref{fig:collision_ratio} present a bias of $1/N$ because we assumed that
+It is important to notice that Figure~\ref{fig:collision_ratio} presents a bias of $1/N$ because we assumed that
 the first vehicle must collide with the damaged vehicle to detect it. This assumption is necessary to define a
-baseline to compare against. Giving the first vehicle to time to perceive the obstacle and stop safely would 
+baseline to compare against. Giving the first vehicle to time to perceive the obstacle and stop safely would
 raise the question why the others cannot do the same.
