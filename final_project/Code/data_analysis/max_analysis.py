@@ -29,9 +29,14 @@ def plot_positions(files, test_type):
         data = pickle.load(open(file_path,"r"))
 
         vehicle_positions = {}
+        type30_count = 0
         for msg in data:
             msg_timestamp, msg_data_encoded = msg
             msg_data = experiment_log_msg.decode(msg_data_encoded)
+
+            # check message type really quickly
+            if msg_data.type == 30:
+                type30_count += 1
 
             veh = msg_data.vehicle
             loc = msg_data.vehicle_location
@@ -40,12 +45,27 @@ def plot_positions(files, test_type):
             else:
                 vehicle_positions[veh] = [loc]
 
-        # now we can plot the movement of the vehicles
-        for key, value in vehicle_positions.items():
-            x, y = locations_to_xy(value)
-            plt.plot(x, y)
+        # find how long the log was
+        msg_timestamp, msg_data_encoded = data[0]
+        msg_data = experiment_log_msg.decode(msg_data_encoded)
+        begin_time = msg_data.timestamp
+        msg_timestamp, msg_data_encoded = data[-1]
+        msg_data = experiment_log_msg.decode(msg_data_encoded)
+        end_time = msg_data.timestamp
+        total_time = end_time - begin_time
+        # i think total time is in milliseconds so I am going to change to seconds
+        total_time = total_time / 1000
+        # print the number of messages with type 30 for a specific file
+        print ("For file %s there were %i messages with type 30 in %f seconds. That is %f messages/second" % (file_path, type30_count, total_time, type30_count/total_time))
 
-        plt.show()
+        # commenting out the plotting code because i just want to see the messages/second
+        
+        # now we can plot the movement of the vehicles
+        # for key, value in vehicle_positions.items():
+        #     x, y = locations_to_xy(value)
+        #     plt.plot(x, y)
+        #
+        # plt.show()
 
 def locations_to_xy(locations):
     '''
@@ -61,4 +81,9 @@ def locations_to_xy(locations):
 
     return x, y
 
+
+
 plot_positions(ONE, '1')
+plot_positions(TWO, '2')
+plot_positions(THREE, '3')
+plot_positions(FOUR, '4')
