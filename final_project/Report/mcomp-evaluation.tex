@@ -150,6 +150,12 @@ the load on the communication channel.
     \caption{Safety distance ($D_s$) between two consecutive vehicles \label{fig:safety_distance}}
 \end{figure}
 
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.48\textwidth, height=0.24\textwidth]{figures/bandwidth_usage.pdf}
+    \caption{Bandwidth usage for different communication models \label{fig:bandwidth_usage}}
+\end{figure}
+
 Figures~\ref{fig:distance_from_poi} and~\ref{fig:safety_distance} show the average distance 
 between the $POI$ and the place where the vehicles stopped, and the average distance 
 between two consecutive vehicles respectively (both scaled to the real world).
@@ -165,6 +171,10 @@ The \textit{yellow} circles indicate the position of the vehicles after they sto
 The \textit{blue} circles indicate their communication ranges. The \textit{red} cylinders 
 indicate the location advertised by the vehicles as \textit{dangerous}.
 
+Figure~\ref{fig:bandwidth_usage} shows the bandwidth usage for different communication models.
+We notice a clear increase in the bandwidth usage when allowing the vehicles to continuously broadcast messages
+compared to simpler models. Nevertheless $450$byte/s constitute $7 \times 10^{-5}\%$ and
+$6 \times 10^{-6}\%$ of the theoretical bandwidth supported by the 802.11g and 802.11n WiFi standards respectively.
 The proposed communication model achieves a collision ratio reduction of about $\collision_ratio_reduction_perc\%$,
 while increasing the distance from the $POI$ and the safety distance between vehicles by a factor of 
 $3$ and $5$ respectively, compared to the baseline.
