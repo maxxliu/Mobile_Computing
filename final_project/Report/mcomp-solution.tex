@@ -1,32 +1,59 @@
 \section{Approach}
 \label{sec:solution}
 
-In order to compare the safety of various autonomous vehicle communication networks, we require a vehicle infrastructure that allows customizable communication. To this end, we utilize the Duckietown infrastructure at the Toyota Technical Institute at Chicago [1]. Duckietown is a combination of hardware and software that allows for highly modular autonomous vehicle research. The vehicles use a battery-powered 3-wheeled chassis and are controlled with a Raspberry Pi. They have onboard cameras for lane detection and Wi-Fi devices for communication. Each "Duckiebot" is controlled by the Duckietown software system. This system uses ROS to coordinate all off the concurrent processes on each Duckiebot, which includes processing the camera imagery and sending power to the wheels [2]. We configure and calibrate six Duckiebots for the purposes of this experiment. In order to conduct our experiments, we use a 3-meter wide square which resembles a miniaturized town. The town contains several roads and intersections to allow us to test various scenarios.
+\begin{figure}[t]
+    \centering
+    \vspace{0.2cm}
+    \includegraphics[width=0.44\textwidth]{figures/model.pdf}
+    \caption{Block diagram of a fleet of autonomous vehicles  \label{fig:model_block_diagram}}
+\end{figure}
 
-In regards to the vehicle communication, we use LCM to send messages between the vehicles [3]. LCM is a multi-platform library that allows simple low-latency messaging. All of the vehicles are connected to a central Wi-Fi device, and subscribe to two common LCM channels. The first channel constantly updates the vehicles with all of the vehicle locations. We later describe the localization process to derive this information. The second channel informs the vehicles of a road-obstruction. These messages are published by the vehicles themselves, and are then selectively ignored by the other vehicles based on the location data. This selective ignoring allows us to emulate the real-world limits of Wi-Fi range. This is an issue for the external validity of our experiments, as the vehicles either accept or reject to recognize a message at a distinct distance. At real-world scale, Wi-Fi packets drop over distance and don't just disappear at a specified range. While we do not have a solution to this, we don't believe it to be very limiting.
+Figure~\ref{fig:model_block_diagram} shows a block-diagram of a system of self-driving vehicles acting on and reacting to
+a partially unknown environment. In this work we enable vehicles to explicitly communicate with each other. Our contribution
+is indicated in Figure~\ref{fig:model_block_diagram} by the green block ''Fleet-aware Controller``.
+A fleet-aware controller process in a self-driving vehicle has two objectives: notifying other vehicles about
+hazardous situations that the vehicle is aware of, and stopping the vehicle at a safe distance from a dangerous location.
 
-Under this framework, we effectively investigate various communication methods. The specific methods in which we are interested are protocols for how safety-affecting data are sent throughout a network of vehicles. More specifically, we observe different messaging protocols for the response of vehicles to the realization of an obstruction. Under these messaging protocols, we compare how the crash rate changes. We will also look at the change in stopping distance from the obstruction.
+A fleet-aware controller must have access both the internal and the external communication pipeline. The internal communication
+pipeline is usually a centralized message-based communication architecture that allows processes within the same vehicle to exchange
+messages. The external communication pipeline is usually a distributed message-based communication architecture that allow
+vehicles that are physically far from each other to exchange information. 
+Both these modules are fundamental to our approach but neither the definition nor the implementation of any of them is within
+the scope of this work.
+We are interesting in which information to bridge from the internal communication network to the external and viceversa as well as
+how often the same information should be broadcasted in or out of the vehicle.
+Our fleet-aware controller is comprised of five main features:
 
-As a baseline, the first protocol we investigate is Single Messaging. Under this protocol, when a vehicle comes within observation distance of the obstruction, it sends out a single danger message to every vehicle within range and stops. This message contains the location of the danger and the location of the stopped vehicle. Any vehicle that received the message will stop before it reaches either the danger or the stopped vehicle. All other vehicles remain unaware of the danger. This is our baseline protocol as only a single message is sent and so a lot of Wi-Fi bandwidth is wasted. The next protocol is Propagation. Again, the observing vehicle sends a single danger message to all vehicles in range. The vehicle stops, and every vehicle that received the message will stop before it reaches either the danger or the stopped vehicle. These vehicles also retransmit the danger message, which continues for each receiving vehicle. This creates a propagation effect throughout the network of vehicles. The last protocol we investigate is Message Broadcasting. This protocol is the same as Propagation, except that the observing vehicle continuously broadcasts the danger message to all vehicles within range. Again, all receiving vehicles retransmit the message. This should be the safest protocol, but it also requires the most Wi-Fi bandwidth as the message is continuously transmitted. As a control, we compare our findings to a protocol with no communication, in which all vehicles are expected to crash.
-
-
-\todoinad{FROM HERE}
-Emphasize and explain the implementation of three features:
 \begin{itemize}
-\item message broadcasting
-\item message propagation
-\item reaction time aware communication
+\item Local knowledge and emergency stop
+\item Single message transmission
+\item Message propagation
+\item Message broadcasting
+\item Vehicle-chain-aware communication strategy
 \end{itemize}
 
-Talk about the indoor-GPS that we used.
+\subsection{Local knowledge and emergency stop}
+A vehicle maintains a database of known dangerous locations. The vehicle gently stops when the distance to the closest
+dangerous location is approaching the safety distance. This feature does not require or subsume any communication
+strategy. It is a mere safety feature with no knowledge about other vehicles. The following features will be responsible 
+for updating and sharing such a database.
 
+\subsection{Single message transmission}
+When a vehicle comes within observation distance of an obstruction on the road (e.g., an accident), 
+it adds the location to its internal database and sends out a single danger message to every vehicle within its 
+communication range. This message contains the location of the danger (GPS coordinates) and the time of the observation.
+When a vehicle receives a message from another vehicle, it adds the location of the danger to its internal database.
 
-\todoinad{TO HERE}
+\subsection{Message propagation}
+When a vehicle receives a message from another vehicle, it also retransmits the same message to all the vehicles within
+its communication range. This creates a propagation effect throughout the network of vehicles.
 
-References:
+\subsection{Message broadcasting}
+Each vehicle is responsible for maintaining an updated located database of dangerous locations. By using perception
+they can declare a location as safe. With message broadcasting, each vehicle will republish all the known dangerous
+locations in its database to the nearby vehicles with fixed frequency $F$. This will enable vehicles that enter the
+communication range of another vehicles at any given time to receive updated information about the safety of the surroundings.
 
-[1] Jacopo Tani, et al. ?Duckietown: An Innovative Way to Teach Autonomy? Educational Robotics in the Makers Era Advances in Intelligent Systems and Computing, 2017
-
-[2] Morgan Quigley, et al. ?ROS: an open-source Robot Operating System? 
-
-[3] Huang, Albert, Edwin Olson, David C. Moore. "LCM: Lightweight Communications and Marshalling" 
+\subsection{Vehicle-chain-aware communication strategy}
+When a vehicle stops due to the presence of an obstruction, it suddenly becomes an obstruction itself.
+Vehicles stopping due to an emergency will add their location to the database of dangerous locations.
