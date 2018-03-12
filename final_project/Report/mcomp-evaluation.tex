@@ -111,17 +111,16 @@ the load on the communication channel.
     \caption{Safety distance ($D_s$) between two consecutive vehicles \label{fig:safety_distance}}
 \end{figure}
 
-Figure~\ref{fig:distance_from_poi} shows the average distance (scaled to the real world) between the $POI$ 
-and the place where the vehicles stopped for different communication models. The safety distance $D$
-is close to $2.5$ meters for the \textbf{baseline} model since all car collide with each other around the
-$POI$. The models \textbf{communication-only} and \textbf{propagation-only} increase the average distance 
-from the $POI$ compared to the baseline but it fails when vehicles are outside the communication range(s).
-The complete pipeline \textbf{full-model} succeed in warning vehicles that enter the communication range(s)
-later.
-Figure~\ref{fig:safety_distance} shows the average distance (scaled to the real world) between two consecutive 
-vehicles. Unlike $D_p$ that depends on the number of vehicles involved in the experiment, $D_s$ is the relative
-distance between vehicle, hence an absolute indicator of safety.
+Figures~\ref{fig:distance_from_poi} and~\ref{fig:safety_distance} show the average distance 
+between the $POI$ and the place where the vehicles stopped, and the average distance 
+between two consecutive vehicles respectively (both scaled to the real world).
+The distance $D_p$ is close to $4.5$ meters for the \textbf{baseline} model since all car collide with each 
+other around the $POI$. The models \textbf{communication-only} and \textbf{propagation-only} increase both 
+$D_p$ and $D_s$ compared to the baseline, but they fail when vehicles are outside the communication range(s).
+The complete pipeline \textbf{full-model} succeed in warning vehicles that enter the communication range(s) later.
+Unlike $D_p$, $D_s$ does not depend on the number of vehicles involved in the experiment, hence it 
+is an absolute indicator of safety.
 
 The proposed communication model achieves a collision ratio reduction of about $\collision_ratio_reduction_perc\%$,
 while increasing the distance from the $POI$ and the safety distance between vehicles by a factor of 
-$3$ and $5$ respectively compared to the baseline.
+$3$ and $5$ respectively, compared to the baseline.
