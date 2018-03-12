@@ -1,3 +1,58 @@
 \section{Background}
 
-//TODO
+For over a decade, the feasibility and applications of communication between autonomous
+vehicles have been well defined and studied. The biggest limitations at the time were
+network infrastructure and autonomous vehicle technology; but modern networks and
+autonomous vehicle technology have made communication applications not only feasible
+but also necessary. The applications of communication between autonomous vehicles
+span beyond road vehicles and have many practical benefits to other transportation methods
+such as trains and planes, but for the purposes of this paper the discussion will center
+around road vehicles.
+
+The applications of vehicle communication have been well thought out, one of the key
+challenges that remains is implementing a system infrastructure that is able to
+effectively deploy such features while keeping in mind the network requirements [2].
+Features such as emergency warnings, collision avoidance, as well as motion planning,
+all require different degrees of network speed and reliability that range from
+extreme reliability and low latency to more relaxed requirements. With modern networks,
+this is becoming less of an issue but is still a key factor we keep in mind while
+simulating our communication network.
+
+To further discuss autonomous vehicle networks, recent work has been done to make
+the implementation of communication infrastructure much easier by providing a standardized
+framework for coordination among a fleet of vehicles [4]. This framework would remove
+the complications of needing to program individual vehicles and abstracts the global
+state of the system when vehicles are deployed. This will allow users to quickly build
+upon single vehicle tasks and deploy concurrent, sequential, or event based tasks
+to a fleet of vehicles. This would be extremely useful in road scenarios that require
+a large degree of coordination between vehicles in order to safely and efficiently
+navigate (ex. a large pile up of cars on a highway during rush hour).
+
+Improving the efficiency of vehicles on roads (especially highways) has long been a
+very obvious application for autonomous vehicle communication [3]. There has been
+both recent research and previous research done in this area where the question
+considered was essentially how to best model vehicles following one another to best
+improve safety and efficiency [5, 1]. Primary variables considered are velocity
+and distance with findings that support flocking behavior of vehicles where velocities
+and distances between vehicles all converge towards a value.
+
+In this paper, we move more towards modeling the safety of different communication models.
+Specifically, we look at scenarios where traditional methods may be ineffective and propose
+a solution that takes into account variables such as network latency and reaction speed.
+We present four unique communication scenarios and detail the effectiveness of each
+with respect to the vehicle collision rate.
+
+
+(Will need to move this to the references section of final paper)
+
+References:
+
+[1] Herbert G. Tanner, Ali Jadbabaie and George J. Pappas. Coordination of Multiple Autonomous Vehicles.
+
+[2] Theodore L. Willke, Patcharinee Tientrakool, and Nicholas F. Maxemchuk. A Survey of Inter-Vehicle Communication Protocols and Their Applications. In IEEE Communications Surveys & Tutorials, 2009.
+
+[3] Richard M. Murray. Recent Research in Cooperative Control of Multi-Vehicle Systems.
+
+[4] Keila Lima, Eduardo R. B. Marques, Jose Pinto, Joao B. Sousa. Dolphin: a task orchestration language for autonomous vehicle networks.
+
+[5] Hui Oua, Tie-Qiao Tang. An extended two-lane car-following model accounting for inter-vehicle communication.
