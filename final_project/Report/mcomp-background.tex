@@ -11,7 +11,7 @@ around road vehicles.
 
 The applications of vehicle communication have been well thought out, one of the key
 challenges that remains is implementing a system infrastructure that is able to
-effectively deploy such features while keeping in mind the network requirements [2].
+effectively deploy such features while keeping in mind the network requirements~\cite{willke2009survey}.
 Features such as emergency warnings, collision avoidance, as well as motion planning,
 all require different degrees of network speed and reliability that range from
 extreme reliability and low latency to more relaxed requirements. With modern networks,
@@ -20,7 +20,8 @@ simulating our communication network.
 
 To further discuss autonomous vehicle networks, recent work has been done to make
 the implementation of communication infrastructure much easier by providing a standardized
-framework for coordination among a fleet of vehicles [4]. This framework would remove
+framework for coordination among a fleet of vehicles~\cite{keila2018}.
+This framework would remove
 the complications of needing to program individual vehicles and abstracts the global
 state of the system when vehicles are deployed. This will allow users to quickly build
 upon single vehicle tasks and deploy concurrent, sequential, or event based tasks
@@ -29,10 +30,11 @@ a large degree of coordination between vehicles in order to safely and efficient
 navigate (ex. a large pile up of cars on a highway during rush hour).
 
 Improving the efficiency of vehicles on roads (especially highways) has long been a
-very obvious application for autonomous vehicle communication [3]. There has been
-both recent research and previous research done in this area where the question
+very obvious application for autonomous vehicle communication~\cite{murray2007recent}.
+There has been both recent research and previous research done in this area where the question
 considered was essentially how to best model vehicles following one another to best
-improve safety and efficiency [5, 1]. Primary variables considered are velocity
+improve safety and efficiency~\cite{ou2017extended, tanner2003coordination}.
+Primary variables considered are velocity
 and distance with findings that support flocking behavior of vehicles where velocities
 and distances between vehicles all converge towards a value.
 
@@ -43,16 +45,18 @@ We present four unique communication scenarios and detail the effectiveness of e
 with respect to the vehicle collision rate.
 
 
+\begin{comment}
 (Will need to move this to the references section of final paper)
 
 References:
 
 [1] Herbert G. Tanner, Ali Jadbabaie and George J. Pappas. Coordination of Multiple Autonomous Vehicles.
 
-[2] Theodore L. Willke, Patcharinee Tientrakool, and Nicholas F. Maxemchuk. A Survey of Inter-Vehicle Communication Protocols and Their Applications. In IEEE Communications Surveys & Tutorials, 2009.
+[2] Theodore L. Willke, Patcharinee Tientrakool, and Nicholas F. Maxemchuk. A Survey of Inter-Vehicle Communication Protocols and Their Applications. In IEEE Communications Surveys  Tutorials, 2009.
 
 [3] Richard M. Murray. Recent Research in Cooperative Control of Multi-Vehicle Systems.
 
 [4] Keila Lima, Eduardo R. B. Marques, Jose Pinto, Joao B. Sousa. Dolphin: a task orchestration language for autonomous vehicle networks.
 
 [5] Hui Oua, Tie-Qiao Tang. An extended two-lane car-following model accounting for inter-vehicle communication.
+\end{comment}
