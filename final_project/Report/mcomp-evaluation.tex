@@ -39,7 +39,7 @@ In our scenario, after the accident occurred, a number of
 vehicles $N$ will approach the same intersection from different directions and with different speed.
 We test our model on a variable number of vehicles between $3$ and $6$. We observe consistent
 results across all the values of $N$ that we consider.
-One experiment starts with $N$ vehicles start moving at the same time and from different locations and
+One experiment starts with $N$ vehicles starting at the same time and from different locations and
 driving towards the $POI$. The experiment ends when all the vehicles stop (either after they crashed
 or stopped safely).
 In our experiments, due to the lack of visibility, the first vehicle approaching the intersection will inevitably crash
@@ -129,7 +129,7 @@ the scenario can always degenerate to the case where all vehicles are too far fr
 messages, hence they will all collide.
 Our complete communication pipeline (\textbf{full-model}) features all these communication strategies as well
 as a broadcasting mechanism that allow all the vehicles that receive a message to keep publishing it at a frequency
-$F$. We empirically found that in our model of town, a frequency of $H=1Hz$ ensures safety while minimizing
+$F$. We empirically found that in our model of town, a frequency of $F=1Hz$ ensures safety while minimizing
 the load on the communication channel.
 
 \begin{figure}[t]
@@ -173,7 +173,7 @@ indicate the location advertised by the vehicles as \textit{dangerous}.
 
 Figure~\ref{fig:bandwidth_usage} shows the bandwidth usage for different communication models.
 We notice a clear increase in the bandwidth usage when allowing the vehicles to continuously broadcast messages
-compared to simpler models. Nevertheless $450$byte/s constitute $7 \times 10^{-5}\%$ and
+compared to simpler models. Nevertheless, $450$byte/s constitute $7 \times 10^{-5}\%$ and
 $6 \times 10^{-6}\%$ of the theoretical bandwidth supported by the 802.11g and 802.11n WiFi standards respectively.
 The proposed communication model achieves a collision ratio reduction of about $\collision_ratio_reduction_perc\%$,
 while increasing the distance from the $POI$ and the safety distance between vehicles by a factor of
