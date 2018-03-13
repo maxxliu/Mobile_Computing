@@ -29,14 +29,17 @@ def plot_positions(files, test_type):
         data = pickle.load(open(file_path,"r"))
 
         vehicle_positions = {}
-        type30_count = 0
+        type30_count = 0.0
+        type30_byte_size = 0.0
         for msg in data:
+
             msg_timestamp, msg_data_encoded = msg
             msg_data = experiment_log_msg.decode(msg_data_encoded)
 
             # check message type really quickly
             if msg_data.type == 30:
                 type30_count += 1
+                type30_byte_size += len( bytes(msg_data) )
 
             veh = msg_data.vehicle
             loc = msg_data.vehicle_location
@@ -56,10 +59,12 @@ def plot_positions(files, test_type):
         # i think total time is in milliseconds so I am going to change to seconds
         total_time = total_time / 1000
         # print the number of messages with type 30 for a specific file
-        print ("For file %s there were %i messages with type 30 in %f seconds. That is %f messages/second" % (file_path, type30_count, total_time, type30_count/total_time))
+        print ("For file %s there were %i messages with type 30 in %f seconds. That is %.2f messages/second, %.2f byte/sec" % (file_path, type30_count, total_time, type30_count/total_time, type30_byte_size/total_time))
+
+
 
         # commenting out the plotting code because i just want to see the messages/second
-        
+
         # now we can plot the movement of the vehicles
         # for key, value in vehicle_positions.items():
         #     x, y = locations_to_xy(value)

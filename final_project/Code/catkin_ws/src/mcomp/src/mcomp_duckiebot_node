@@ -1,0 +1,305 @@
+#!/usr/bin/env python
+
+import rospy
+import lcm
+import json
+import numpy as np
+import utils
+from time import sleep
+from utils import stdout
+from threading import Thread
+from lcm_types.mcomp_msgs import event_msg, configuration_msg, vgps_location_msg, experiment_log_msg, auto_pilot_msg
+from duckietown_msgs.msg import BoolStamped
+from log_types import MSG_TYPE
+
+veh = None
+verbose = False
+lcm_handler = None
+e_stop_pub = None
+mcomp_configuration = None
+last_position = None
+last_orientation = None
+last_position_time = -1
+experiment_log_channel = "MCOMP_LOG"
+mcomp_event_channel = "MCOMP_EVENT"
+is_stopped = True
+is_shutdown = False
+release_command_received = False
+event_published = False
+known_events = []
+
+def log( msg_type, timestamp=None, location=None, content={}, n_copies='default' ):
+	global verbose
+	global lcm_handler, veh, last_position, last_orientation
+	if timestamp is None:
+		timestamp = utils.now()
+	msg = experiment_log_msg()
+	msg.timestamp = timestamp
+	msg.type = msg_type
+	msg.vehicle_location = last_position.tolist() if last_position is not None else [-999,-999]
+	msg.location = msg.vehicle_location if location is None else location
+	msg.vehicle_orientation = last_orientation if last_orientation is not None else -999
+	msg.vehicle = veh
+	msg.content = json.dumps( content )
+	# publish log message
+	utils.publish( lcm_handler, experiment_log_channel, experiment_log_msg.encode(msg), n_copies )
+	if verbose:
+		print 'Publishing message `%s` on `%s`' % ( msg_type,  experiment_log_channel )
+
+def stop_vehicle( due_to_dangerous_event=False ):
+	global e_stop_pub, is_stopped, mcomp_configuration
+	# create message
+	msg = BoolStamped()
+	msg.header.stamp = rospy.Time.now()
+	msg.data = True # acquire control by bypassing auto-pilot
+	e_stop_pub.publish(msg)
+	# propagate this action as a new event
+	if due_to_dangerous_event:
+		event_detected( event_at_car_location=True )
+	# set the vehicle as stopped
+	is_stopped = True
+	# log
+	log( MSG_TYPE.VEHICLE_STOPPED, utils.now() )
+
+def release_vehicle():
+	global e_stop_pub, is_stopped
+	# create message
+	msg = BoolStamped()
+	msg.header.stamp = rospy.Time.now()
+	msg.data = False # release control to auto-pilot
+	e_stop_pub.publish(msg)
+	#
+	is_stopped = False
+	# log
+	log( MSG_TYPE.VEHICLE_RELEASED, utils.now() )
+
+def store_new_event(event_location):
+	global known_events
+	new_event = ( round(event_location[0],2), round(event_location[1],2) )
+	if new_event not in known_events:
+		known_events.append( new_event )
+
+def mcomp_event_msg_handler(channel, data):
+	global verbose
+	global veh, mcomp_configuration, last_position, event_published
+	global lcm_handler, mcomp_event_channel
+	# skip if this bot did not receive the configuration
+	if not is_configured():
+		print 'I received a message but I don\'t have a configuration for this experiment. Skipping it!'
+		return
+	# decode message
+	msg = event_msg.decode(data)
+	# ignore event messages from self
+	if msg.vehicle == veh: return
+	# get sender and event location
+	sender_loc = np.asarray( msg.vehicle_location )
+	event_loc = msg.location
+	# drop message if this bot is outside the communication_radius of the sender
+	communication_radius = mcomp_configuration['communication_radius']
+	# compute distance between the bot and the sender
+	distance_from_sender = np.sqrt(
+		np.sum(
+			np.power(last_position-sender_loc, 2)
+		)
+	)
+	if distance_from_sender < communication_radius:
+		if verbose:
+			print "I'm @ %r, got a message from %r, it is talking about something @ %r, close enough, ACCEPTED!" % ( last_position.tolist(), sender_loc.tolist(), event_loc )
+		# store event location
+		store_new_event( event_loc )
+		# propagate (if active)
+		# allow_republish = bool( mcomp_configuration['allow_republish'] )
+		if mcomp_configuration['allow_propagation'] and not event_published: #  ( allow_republish or not event_published ):
+			# send message to other vehicles
+			msg.vehicle = veh
+			msg.vehicle_location = last_position.tolist()
+			utils.publish( lcm_handler, mcomp_event_channel, event_msg.encode(msg) )
+			# log
+			log( MSG_TYPE.EVENT_GENERATED, msg.timestamp, msg.location )
+			event_published = True
+		# log
+		log( MSG_TYPE.EVENT_RECEIVED, utils.now(), msg.location )
+	else:
+		# too far away, message dropped
+		if verbose:
+			print "I'm @ %r, got a message from %r, it is talking about something @ %r, too far away, DROPPED!" % ( last_position.tolist(), sender_loc.tolist(), event_loc )
+		pass
+
+def mcomp_configuration_msg_handler(channel, data):
+	global mcomp_configuration, is_stopped, event_published, known_events
+	# decode configuration message
+	msg = configuration_msg.decode(data)
+	if len(msg.configuration) == 0:
+		mcomp_configuration = None
+	else:
+		mcomp_configuration = json.loads( msg.configuration )
+		mcomp_configuration['event_location'] = np.asarray(
+			[ mcomp_configuration['event_location'][0], mcomp_configuration['event_location'][1] ]
+		)
+	# reset state
+	is_stopped = False
+	event_published = False
+	known_events = []
+	# log
+	log( MSG_TYPE.CONFIGURATION_RECEIVED, utils.now() )
+
+def mcomp_auto_pilot_msg_handler(channel, data):
+	global release_command_received
+	# decode configuration message
+	msg = auto_pilot_msg.decode(data)
+	if msg.enabled:
+		release_vehicle()
+		release_command_received = True
+	else:
+		stop_vehicle()
+
+def event_detected( event_at_car_location=False ):
+	global veh, event_published, last_position
+	vehicle_location = [ last_position[0], last_position[1] ]
+	if event_at_car_location:
+		event_loc = [ -999, -999 ]
+		if last_position is not None:
+			event_loc = vehicle_location
+	else:
+		event_loc = [ mcomp_configuration['event_location'][0], mcomp_configuration['event_location'][1] ]
+	# create event message
+	msg = event_msg()
+	msg.timestamp = utils.now()
+	msg.location = event_loc
+	msg.vehicle_location = vehicle_location
+	msg.vehicle = veh
+	msg.description = "I saw an accident!"
+	# send message to other vehicles
+	utils.publish( lcm_handler, mcomp_event_channel, event_msg.encode(msg), 2 )
+	# log
+	log( MSG_TYPE.EVENT_GENERATED, msg.timestamp, event_loc )
+	event_published = True
+	if not event_at_car_location:
+		store_new_event( event_loc )
+
+def visual_gps_msg_handler(channel, data):
+	global veh, last_position, last_orientation, last_position_time
+	msg = vgps_location_msg.decode(data)
+	if msg.vehicle == veh: # and msg.timestamp > last_position_time:
+		last_position = np.asarray( msg.location )
+		last_orientation = msg.theta
+		last_position_time = msg.timestamp
+		# log
+		# if is_configured():
+		# 	log(
+		# 		MSG_TYPE.GPS,
+		# 		utils.now(),
+		# 		{ 'posiiton' : last_position.tolist(), 'orientation' : last_orientation }
+		# 	)
+
+def car_controller_fcn(args):
+	global verbose
+	global mcomp_configuration, perception_distance, is_stopped, is_shutdown, event_published, known_events
+	global release_command_received
+	step = 0
+	while not is_shutdown and not rospy.is_shutdown():
+		# wait for the experiment to start
+		if not is_configured():
+			if not is_stopped:
+				stop_vehicle()
+			sleep(0.05)
+			continue
+
+		if is_configured and not release_command_received:
+			log( MSG_TYPE.CONFIGURATION_RECEIVED, utils.now() )
+			sleep(0.05)
+			continue
+
+		# get location of the event
+		event_location = mcomp_configuration['event_location']
+		perception_distance = mcomp_configuration['perception_distance']
+
+		# compute distance between the bot and the ROI
+		distance_from_event = np.sqrt(
+			np.sum(
+				np.power(last_position-event_location, 2)
+			)
+		)
+		if verbose:
+			stdout('Event (verbose)', 'Distance: %.2f meters' % distance_from_event)
+
+		# signal event to other vehicles if close enough
+		if distance_from_event < perception_distance and not event_published: # ( allow_republish or not event_published ):
+			stop_vehicle( due_to_dangerous_event=True )
+			event_detected()
+
+		# if there are knwon events, check if within the reaction radius
+		if verbose:
+			print "Known events: %r" % known_events
+		for event_location_as_tuple in known_events:
+			event_location = np.asarray( list(event_location_as_tuple) )
+			distance_from_event = np.sqrt(
+				np.sum(
+					np.power(last_position-event_location, 2)
+				)
+			)
+			reaction_radius = mcomp_configuration['reaction_radius']
+
+
+			allow_republish = bool( mcomp_configuration['allow_republish'] )
+			if distance_from_event < reaction_radius and ( allow_republish or not is_stopped ):
+
+				if not allow_republish or step % 10 == 0:
+
+
+					if verbose:
+						print "Me -> (%r) = %.2f < %.2f :: STOPPING" % ( event_location, distance_from_event,  reaction_radius )
+
+					stop_vehicle( due_to_dangerous_event=True )
+
+
+			else:
+
+				if verbose:
+					print "Me -> (%r) = %.2f > %.2f :: KEEP GOING" % ( event_location, distance_from_event,  reaction_radius )
+
+
+		# keep spinning
+		sleep(0.1)
+
+		step += 1
+
+def is_configured():
+	return mcomp_configuration is not None
+
+if __name__ == '__main__':
+	# set up ROS publishing node
+	rospy.init_node('mcomp_duckiebot_node')
+
+	# get parameters
+	veh = rospy.get_param('~veh')
+	verbose = rospy.get_param('~verbose')
+
+	# create control override publisher
+	e_stop_pub = rospy.Publisher(
+		"/%s/joy_mapper_node/joystick_override" % veh,
+		BoolStamped,
+		queue_size=1
+	)
+
+	# initialize LCM
+	lcm_handler = lcm.LCM()
+
+	# start listening to other vehicles messages
+	mcomp_config_sub = lcm_handler.subscribe("MCOMP_SETUP", mcomp_configuration_msg_handler)
+	mcomp_event_sub = lcm_handler.subscribe(mcomp_event_channel, mcomp_event_msg_handler)
+	mcomp_autopilot_sub = lcm_handler.subscribe("MCOMP_AUTO_PILOT", mcomp_auto_pilot_msg_handler)
+	visual_gps_sub = lcm_handler.subscribe("VISUAL_GPS", visual_gps_msg_handler)
+
+	# start car controller
+	car_controller = Thread( target=car_controller_fcn, args=(None,) )
+	car_controller.start()
+
+	try:
+		while True:
+			lcm_handler.handle()
+	except KeyboardInterrupt:
+		pass
+	finally:
+		is_shutdown = True
+		car_controller.join()
