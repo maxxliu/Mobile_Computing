@@ -11,15 +11,17 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage{epsfig}
 \usepackage{graphicx}
-\usepackage[tight]{subfigure}
 \usepackage{tabularx}
 \usepackage{booktabs}
 \usepackage{xspace} % Used for managing spaces after defined symbols
 \usepackage{flushend}
 \usepackage{color}
 \usepackage[numbers]{natbib}
-\usepackage{subfigure}
 \usepackage{textcomp}
+
+\usepackage{subcaption}
+
+ \usepackage{float}
 
 \usepackage[textsize=scriptsize]{todonotes}
 
@@ -46,27 +48,27 @@
 
 
 \hypersetup{pdfinfo={
-Title={TITLE HERE},
-Author={Andrea F. Daniele, Noah Hirsch, and Max Liu},
+Title={Fleet-Level Communication for Self-Driving Vehicles},
+Author={Andrea F. Daniele, Noah A. Hirsch, and Max X. Liu},
 }}
 
 \begin{document}
 
 % paper title
-\title{TITLE HERE}
+\title{Fleet-Level Communication for Self-Driving Vehicles}
 
 \author{
 \IEEEauthorblockN{Andrea F. Daniele}
 \IEEEauthorblockA{TTI-Chicago, USA\\
 {\tt afdaniele@ttic.edu}}
 \and
-\IEEEauthorblockN{Noah Hirsch}
+\IEEEauthorblockN{Noah A. Hirsch}
 \IEEEauthorblockA{University of Chicago, USA\\
-{\tt YOUR.EMAIL}}
+{\tt nashirsch@uchicago.edu}}
 \and
-\IEEEauthorblockN{Max Liu}
+\IEEEauthorblockN{Max X. Liu}
 \IEEEauthorblockA{University of Chicago, USA\\
-{\tt YOUR.EMAIL}}
+{\tt maxliu@uchicago.edu}}
 }
 
 
@@ -74,8 +76,25 @@ Author={Andrea F. Daniele, Noah Hirsch, and Max Liu},
 \maketitle
 
 
+% results
+
+\def \num_test_per_scenario{6}
+\def \N{6}
+\def \gps_delay_sec{1}
+\def \wireless_limit_meter{100}
+\def \collision_ratio_reduction_perc{61}
+\def \improvement_factor_dp{3}
+\def \improvement_factor_ds{5}
+
+
 \input{mcomp-abstract}
 \input{mcomp-intro}
+\input{mcomp-background}
+\input{mcomp-solution}
+\input{mcomp-evaluation}
+\input{mcomp-conclusion}
+
+
 
 %% Use plainnat to work nicely with natbib. 
 \bibliographystyle{abbrvnat}
